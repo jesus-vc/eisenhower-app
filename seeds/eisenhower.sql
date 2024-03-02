@@ -2,7 +2,6 @@
 -- CREATE DATABASE eisenhower;
 -- \connect eisenhower
 
-DROP DATABASE IF EXISTS bankly_test;
 DROP DATABASE IF EXISTS eisenhower_test;
 
 CREATE DATABASE eisenhower_test;

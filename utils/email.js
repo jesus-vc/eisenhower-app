@@ -1,21 +1,32 @@
 import nodemailer from "nodemailer";
 
-//PEER Should this transporter variable be inside the sendEmailRegistration fn?
-// I understand that for now it's unecessary since the 'transporter' doesn't need to be dynamic for now.
+/**  Load environment variables */
+const GMAIL_ACCOUNT = process.env.GMAIL_ACCOUNT;
+const GMAIL_PASSWORD = process.env.GMAIL_PASSWORD;
+
+/** //PEER Should this transporter variable be inside the sendEmailRegistration fn?
+ * I understand that for now it's unecessary since the 'transporter' doesn't need to be dynamic for now. */
+
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
-    user: "eisenhowerapp@gmail.com",
-    pass: "rcgf mrcn nhvu pkgu", // temporary pw
+    user: GMAIL_ACCOUNT,
+    pass: GMAIL_PASSWORD,
   },
 });
 
-export default async function sendEmailRegistration(emailClient) {
+/** Sends email registration link to user
+ *
+ * Requires user data containing {email, plainTextToken, and id }
+ *
+ * Returns no output besides the exit code */
+export default async function sendEmailRegistration(userData) {
   const mailOptions = {
-    from: "eisenhowerapp@gmail.com",
-    to: `${emailClient}`,
+    from: GMAIL_ACCOUNT,
+    to: userData.email,
     subject: "Account Activation",
-    text: "OTP link goes here",
+    text: `Welcome! Please click on this url http://localhost:3001/user/verify?token=${userData.plainTextToken}&id=${userData.id}`,
   };
+
   return await transporter.sendMail(mailOptions);
 }
