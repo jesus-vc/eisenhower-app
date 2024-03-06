@@ -17,7 +17,7 @@
 
     - npm test
 
-    - Integration tests for these four routes are found in routes/integration.test.js contains
+    - Integration tests for these four routes are found in routes/integration.test.js file.
 
 ## Start app from root directory:
 
