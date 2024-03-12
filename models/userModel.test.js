@@ -49,10 +49,6 @@ describe("registerAccount", function () {
   });
 
   it("bad request with duplicate email", async function () {
-    /** //PEER can i get your feedback on this method for testing the errors thrown by the application?
-     *  Is this  a good way to do it?
-     *  Or do you recommend try-catch instance where I perform expect() assertions inside catch?
-     */
     const duplicateAccount = {
       firstName: "U1F",
       lastName: "U1L",
@@ -63,9 +59,8 @@ describe("registerAccount", function () {
 
     const registrationPromise = User.registerAccount(duplicateAccount);
 
-    await expect(registrationPromise).rejects.toThrow(BadRequestError);
     await expect(registrationPromise).rejects.toThrow(
-      `Your ${duplicateAccount.email} is already registered or pending registration.`
+      'duplicate key value violates unique constraint "users_email_key"'
     );
   });
 });

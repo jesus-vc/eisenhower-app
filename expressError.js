@@ -26,3 +26,11 @@ export class UnauthorizedError extends ExpressError {
     super(message, 401);
   }
 }
+
+/** 404 NOT FOUND error. */
+
+export class NotFoundError extends ExpressError {
+  constructor(message = "Not Found") {
+    super(message, 404);
+  }
+}

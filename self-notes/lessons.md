@@ -35,3 +35,8 @@ In summary, while sockets are a prevalent method for communication in networked 
    For example: in a testing environment, where you connect to a pool before all the features/tests and disconnect after the tests are run, you call pool.end at the end on all dynamically created pools."
 
    Source: https://stackoverflow.com/questions/68901534/when-should-i-use-pool-end
+
+8. Query versus route parameters:
+
+- If i want to get details of a resource, use route parameter
+- If i want to search for a keywork in resource or 2+ filters, use query param.

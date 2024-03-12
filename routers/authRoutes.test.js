@@ -61,20 +61,16 @@ const registerUser = async () => {
 /************************************** POST /auth/login */
 
 describe("POST /auth/login", function () {
-  it("redirects and returns auth token with valid email and password", async function () {
+  it("returns auth token with valid email and password", async function () {
     await registerUser();
+
     const respLogin = await request(app).post("/auth/login").send({
       email: newUser.email,
       password: newUser.password,
     });
-
     const token = respLogin.body.token;
-    const redirectUrl = respLogin.body.redirectUrl;
 
     expect(respLogin.statusCode).toEqual(200);
-
-    expect(redirectUrl).toEqual(`/task/${id}`);
-
     expect(jwt.decode(token)).toEqual({
       email: newUser.email,
       exp: expect.any(Number),

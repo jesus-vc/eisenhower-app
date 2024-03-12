@@ -7,7 +7,7 @@ const router = new express.Router();
 
 /** POST /login
  *
- * {email, password} -> returns {token} and redirect to /task/:userId homepage
+ * {email, password} -> returns {token}
  *
  * Authorization required: none **/
 
@@ -25,15 +25,12 @@ router.post("/login", async function (req, res, next) {
 
     if (validLogin) {
       const token = await User.createAuthToken({ email });
-      const userId = await User.getId(email);
-
-      res.json({ token, redirectUrl: `/task/${userId}` });
+      res.json({ token });
     } else {
-      //PEER should I throw this error from within the User.authenticate model?
-      // Also, is it best to throw error or use a 'return next({status: 400, message:"error message"})' statement?
       throw new BadRequestError("Invalid user/password.");
     }
   } catch (error) {
+    // console.log("error from /login router");
     // console.log(error);
     return next(error);
   }

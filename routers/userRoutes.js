@@ -27,7 +27,14 @@ router.post("/register", async function (req, res, next) {
 
     return res.status(200).json(jsonResponse);
   } catch (error) {
-    // console.log(error);
+    //PEER Lawrence, What do you think of this new duplicate constraint error handling?
+    if (error.code === "23505" && error.constraint === "users_email_key") {
+      return next(
+        new BadRequestError(
+          `Your ${req.body.email} is already registered or pending registration.`
+        )
+      );
+    }
     return next(error);
   }
 });
@@ -51,6 +58,7 @@ router.post("/verify", async function (req, res, next) {
 
     if (await User.validToken(req.query)) {
       await User.verifyAccount(req.query.id);
+      //PEER should I also remove this res.redirect below?
       return res.redirect(302, "/auth/login");
     }
   } catch (error) {

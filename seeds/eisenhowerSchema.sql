@@ -6,9 +6,7 @@ CREATE TABLE users (
   first_name VARCHAR(30) NOT NULL CHECK (LENGTH(first_name) >= 1),
   last_name VARCHAR(30) NOT NULL CHECK (LENGTH(last_name) >= 1), 
   phone TEXT NOT NULL CHECK (phone ~ '^[0-9]{10}$'),
-   -- PEER - Do you prefer line 10 or line 11 below for validating email input.
-  email TEXT NOT NULL CHECK (position('@' IN email) > 1),
-  -- email TEXT NOT NULL CHECK (email ~ '.+@.+\..+'),
+  email TEXT UNIQUE NOT NULL CHECK (position('@' IN email) > 1),
   hashed_password TEXT NOT NULL,
   verified BOOLEAN NOT NULL DEFAULT FALSE,
   is_admin BOOLEAN NOT NULL DEFAULT FALSE

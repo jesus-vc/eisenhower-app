@@ -70,14 +70,9 @@ describe("User Registration, Login, & Access", () => {
       email: newUser.email,
       password: newUser.password,
     });
-
     const token = respLogin.body.token;
-    const redirectUrl = respLogin.body.redirectUrl;
 
     expect(respLogin.statusCode).toEqual(200);
-
-    expect(redirectUrl).toEqual(`/task/${userId}`);
-
     expect(jwt.decode(token)).toEqual({
       email: newUser.email,
       exp: expect.any(Number),

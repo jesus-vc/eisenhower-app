@@ -3,6 +3,7 @@ import userRoutes from "./routers/userRoutes.js";
 import authRoutes from "./routers/authRoutes.js";
 import taskRoutes from "./routers/taskRoutes.js";
 import { authenticateJWT } from "./middleware/authMiddleware.js";
+import { NotFoundError } from "./expressError";
 
 const app = express();
 
@@ -13,6 +14,11 @@ app.use(authenticateJWT);
 app.use("/auth", authRoutes);
 app.use("/user", userRoutes);
 app.use("/task", taskRoutes);
+
+/** Handle 404 errors -- this matches everything */
+app.use(function (req, res, next) {
+  return next(new NotFoundError());
+});
 
 /** Generic error handler; anything unhandled goes here. */
 app.use(function (err, req, res, next) {

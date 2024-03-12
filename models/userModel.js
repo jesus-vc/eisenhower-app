@@ -28,17 +28,23 @@ export default class User {
     email,
     password,
   }) {
-    const duplicateCheck = await pool.query(
-      `SELECT email FROM users
-      WHERE email = $1`,
-      [email]
-    );
+    //TODO delete old code below once I get Lawrence's feedback.
+    // const duplicateCheck = await pool.query(
+    //   `SELECT email FROM users
+    //   WHERE email = $1`,
+    //   [email]
+    // );
 
-    if (duplicateCheck.rows[0]) {
-      throw new BadRequestError(
-        `Your ${email} is already registered or pending registration.`
-      );
-    }
+    // if (duplicateCheck.rows[0]) {
+    //   throw new BadRequestError(
+    //     `Your ${email} is already registered or pending registration.`
+    //   );
+    // }
+
+    /**
+     * //PEER Lawrence, a new hashed password is created before
+     * checking for duplicates at the db level when performing the insert operation.
+     * I think this can be memory-expensive, but perhaps this is okay to keep for now. What do you think? */
 
     const hashedPassword = await bcrypt.hash(password, BCRYPT_WORK_FACTOR);
 

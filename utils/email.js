@@ -4,9 +4,6 @@ import nodemailer from "nodemailer";
 const GMAIL_ACCOUNT = process.env.GMAIL_ACCOUNT;
 const GMAIL_PASSWORD = process.env.GMAIL_PASSWORD;
 
-/** //PEER Should this transporter variable be inside the sendEmailRegistration fn?
- * I understand that for now it's unecessary since the 'transporter' doesn't need to be dynamic for now. */
-
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
