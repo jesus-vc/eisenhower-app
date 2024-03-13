@@ -22,15 +22,24 @@ CREATE TABLE tokens_registration (
 );
 
 -- Create the tasks table
-CREATE DOMAIN task_priority AS TEXT CHECK (VALUE IN ('low', 'medium', 'high'));
+-- CREATE DOMAIN task_priority AS TEXT CHECK (VALUE IN ('low', 'medium', 'high'));
+-- CREATE DOMAIN importance_priority AS TEXT CHECK (VALUE IN ('important', 'notImportant'));
+-- CREATE DOMAIN urgency_priority AS TEXT CHECK (VALUE IN ('urgent', 'notUrgent'));
+CREATE DOMAIN priority_domain AS TEXT CHECK (VALUE IN ('now', 'delegate', 'schedule','avoid'));
 
 CREATE TABLE tasks (
   id SERIAL PRIMARY KEY,
   user_id INT,
   FOREIGN KEY (user_id) REFERENCES users(id),
-  description TEXT NOT NULL CHECK (LENGTH(description) >= 3 AND LENGTH(description)<=50),
-  importance task_priority NOT NULL,
-  urgency task_priority NOT NULL,
+  title TEXT NOT NULL CHECK (LENGTH(title) >= 3 AND LENGTH(title)<=50),
+  -- importance task_priority NOT NULL,
+  -- urgency task_priority NOT NULL,
+  important BOOLEAN NOT NULL,
+  urgent BOOLEAN NOT NULL,
+  priority priority_domain NOT NULL,
   timebox INT CHECK (timebox >= 1 AND timebox <= 600),
-  completed BOOLEAN NOT NULL DEFAULT FALSE
+  completed BOOLEAN NOT NULL DEFAULT FALSE,
+  note TEXT CHECK (LENGTH(note) >= 1 AND LENGTH(note)<=500),
+  category TEXT CHECK (LENGTH(note) >= 1 AND LENGTH(note)<=15),
+  deadline_date DATE
 )

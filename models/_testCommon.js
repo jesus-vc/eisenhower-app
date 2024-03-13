@@ -29,10 +29,10 @@ async function commonBeforeAll() {
   );
 
   await pool.query(
-    `INSERT INTO tasks(user_id, description, importance, urgency, timebox, completed)
-        VALUES ($1, 'Task 1', 'high', 'high', '30', false),
-               ($2, 'Task 2', 'medium', 'medium', '60', false),
-               ($3, 'Task 3', 'low', 'low', '90', true)`,
+    `INSERT INTO tasks(user_id, title, urgent, important, priority, timebox, completed, note, category, deadline_date)
+        VALUES ($1, 'Task 1', true, true, 'now', '30', false, 'Note 1', 'Finances', '1111-1-1'),
+               ($2, 'Task 2', true, false, 'delegate', '60', false, 'Note 2', 'Health','2222-2-2'),
+               ($3, 'Task 3', false, false, 'avoid', '90', true, 'Note 3', 'Family', '3333-3-3')`,
     [newUsers.rows[0].id, newUsers.rows[1].id, newUsers.rows[1].id]
   );
 }

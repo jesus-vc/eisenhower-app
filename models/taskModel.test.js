@@ -28,30 +28,42 @@ describe("get", function () {
     expect(tasks1).toEqual([
       {
         taskId: expect.any(Number),
-        description: "Task 1",
-        importance: "high",
-        urgency: "high",
+        title: "Task 1",
+        urgent: true,
+        important: true,
+        priority: "now",
         timebox: 30,
         completed: false,
+        note: "Note 1",
+        category: "Finances",
+        deadline_date: "1111-01-01",
       },
     ]);
 
     expect(tasks2).toEqual([
       {
         taskId: expect.any(Number),
-        description: "Task 2",
-        importance: "medium",
-        urgency: "medium",
+        title: "Task 2",
+        urgent: true,
+        important: false,
+        priority: "delegate",
         timebox: 60,
         completed: false,
+        note: "Note 2",
+        category: "Health",
+        deadline_date: "2222-02-02",
       },
       {
         taskId: expect.any(Number),
-        description: "Task 3",
-        importance: "low",
-        urgency: "low",
+        title: "Task 3",
+        urgent: false,
+        important: false,
+        priority: "avoid",
         timebox: 90,
         completed: true,
+        note: "Note 3",
+        category: "Family",
+        deadline_date: "3333-03-03",
       },
     ]);
 
