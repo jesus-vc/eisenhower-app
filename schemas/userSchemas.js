@@ -4,7 +4,7 @@ import { PHONE_NUMBER_REGEX } from "../constants.js";
 export const userRegisterSchema = Joi.object({
   firstName: Joi.string().min(1).max(30).required(),
   lastName: Joi.string().min(1).max(30).required(),
-  email: Joi.string().email().min(6).max(60).required(),
+  email: Joi.string().email().min(8).max(60).required(),
   password: Joi.string().min(5).max(20).required(),
   phone: Joi.string()
     .regex(PHONE_NUMBER_REGEX)
@@ -13,10 +13,22 @@ export const userRegisterSchema = Joi.object({
   isAdmin: Joi.boolean(),
 });
 
+export const userIdSchema = Joi.object({
+  userId: Joi.number().positive().required(),
+});
+
 export const userVerifySchema = Joi.object({
   token: Joi.string()
     .length(26)
-    .pattern(/^[A-Z2-7]+$/)
-    .required() /** adheres to base 32 alphabet (ABCDEFGHIJKLMNOPQRSTUVWXYZ234567) */,
+    .pattern(
+      /^[A-Z2-7]+$/
+    ) /** adheres to base 32 alphabet (ABCDEFGHIJKLMNOPQRSTUVWXYZ234567) */
+    .required()
+    .messages({
+      "string.length":
+        "Your registration link does not exist. Ensure the original link we e-mailed you has not been modified.",
+      "string.pattern.base":
+        "Your registration link does not exist. Ensure the original link we e-mailed you has not been modified.",
+    }),
   id: Joi.number().positive().required(),
 });

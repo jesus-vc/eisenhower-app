@@ -1,12 +1,12 @@
 import jwt from "jsonwebtoken";
 import pool from "../db/db.js";
 
-import { UnauthorizedError } from "../expressError";
+import { UnauthorizedError, NotFoundError } from "../expressError";
 import User from "../models/userModel";
 import {
   authenticateJWT,
   ensureLoggedIn,
-  ensureCorrectUser,
+  userExistsAndCorrect,
 } from "./authMiddleware";
 
 import { SECRET_KEY } from "../config";
@@ -90,9 +90,9 @@ describe("ensureLoggedIn", function () {
   });
 });
 
-/************************************** ensureCorrectUser */
+/************************************** userExistsAndCorrect */
 
-describe("ensureCorrectUser", function () {
+describe("userExistsAndCorrect", function () {
   let user1;
 
   beforeAll(async () => {
@@ -111,33 +111,44 @@ describe("ensureCorrectUser", function () {
     await pool.end();
   });
 
-  it("works for admin", async function () {
-    /** value of userId does not matter since admin status overrides this value in ensureCorrectUser() fn. */
-    const userId = 1111;
+  it("throws NotFoundError to admin if userId doesn't exist", async function () {
+    /** value of userId does not matter since admin status overrides this value in userExistsAndCorrect() fn. */
+    const req = { params: { userId: 1111 } };
     const res = {
       locals: { user: { email: "admin@email.com", isAdmin: true } },
     };
+    const next = function (err) {
+      expect(err instanceof NotFoundError).toBeTruthy();
+      expect(err.message).toEqual("Not Found");
+    };
 
-    const result = await ensureCorrectUser(userId, res.locals);
-    expect(result).toEqual(true);
+    userExistsAndCorrect(req, res, next);
   });
 
   it("works for correct user without admin access", async function () {
+    const req = { params: { userId: user1.id } };
     const res = {
       locals: { user: { email: user1.email, isAdmin: false } },
     };
 
-    const result = await ensureCorrectUser(user1.id, res.locals);
-    expect(result).toEqual(true);
+    const next = function (err) {
+      expect(err).toBeFalsy();
+    };
+
+    userExistsAndCorrect(req, res, next);
   });
 
   it("fails for incorrect user without admin access", async function () {
+    const req = { params: { userId: user1.id } };
     const res = {
       locals: { user: { email: "u2@email.com", isAdmin: false } },
     };
 
-    await expect(ensureCorrectUser(user1.id, res.locals)).rejects.toThrow(
-      UnauthorizedError
-    );
+    const next = function (err) {
+      expect(err instanceof UnauthorizedError).toBeTruthy();
+      expect(err.message).toEqual("Unauthorized");
+    };
+
+    userExistsAndCorrect(req, res, next);
   });
 });

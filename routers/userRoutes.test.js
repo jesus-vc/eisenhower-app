@@ -2,7 +2,7 @@ import { jest } from "@jest/globals";
 import request from "supertest";
 import app from "../app";
 import { REGISTRATION_TTL } from "../config.js";
-
+import crypto from "crypto";
 import {
   commonBeforeAll,
   commonBeforeEach,
@@ -64,7 +64,6 @@ describe("POST /user/register", function () {
       password: "nigeriaRules",
       phone: "1213213213",
     });
-
     expect(resp.statusCode).toEqual(200);
     expect(resp.body).toEqual(fakeResp);
   });
@@ -124,16 +123,149 @@ describe("POST /user/register", function () {
     );
   });
 
-  it("returns bad request with invalid phone data", async function () {
-    const resp = await request(app).post("/user/register").send({
-      firstName: "Lawrence",
-      lastName: "O",
+  it("returns schema error (BadRequestError) based on first name threshold violations", async function () {
+    const resp1 = await request(app).post("/user/register").send({
+      firstName: "",
+      lastName: "LN1",
       email: "lawrenceo@fakemail.com",
       password: "nigeriaRules",
-      phone: "not-a-number",
+      phone: "1213213213",
     });
-    expect(resp.statusCode).toEqual(400);
-    expect(resp.body.error.err.message).toEqual(
+    expect(resp1.statusCode).toEqual(400);
+    expect(resp1.body.error.err.message).toEqual(
+      '"firstName" is not allowed to be empty'
+    );
+
+    const buffer = crypto.randomBytes(31);
+    const longName = buffer.toString("hex"); //string length = 62
+
+    const resp2 = await request(app).post("/user/register").send({
+      firstName: longName,
+      lastName: "LN1",
+      email: "lawrenceo@fakemail.com",
+      password: "nigeriaRules",
+      phone: "1213213213",
+    });
+    expect(resp2.statusCode).toEqual(400);
+    expect(resp2.body.error.err.message).toEqual(
+      '"firstName" length must be less than or equal to 30 characters long'
+    );
+  });
+
+  it("returns schema error (BadRequestError) based on last name threshold violations", async function () {
+    const resp1 = await request(app).post("/user/register").send({
+      firstName: "FN",
+      lastName: "",
+      email: "lawrenceo@fakemail.com",
+      password: "nigeriaRules",
+      phone: "1213213213",
+    });
+    expect(resp1.statusCode).toEqual(400);
+    expect(resp1.body.error.err.message).toEqual(
+      '"lastName" is not allowed to be empty'
+    );
+
+    const buffer = crypto.randomBytes(31);
+    const longSring = buffer.toString("hex"); //string length = 62
+
+    const resp2 = await request(app).post("/user/register").send({
+      firstName: "FN",
+      lastName: longSring,
+      email: "lawrenceo@fakemail.com",
+      password: "nigeriaRules",
+      phone: "1213213213",
+    });
+    expect(resp2.statusCode).toEqual(400);
+    expect(resp2.body.error.err.message).toEqual(
+      '"lastName" length must be less than or equal to 30 characters long'
+    );
+  });
+
+  it("returns schema error (BadRequestError) based on email threshold violations", async function () {
+    const resp1 = await request(app).post("/user/register").send({
+      firstName: "FN",
+      lastName: "LN",
+      email: "t@y.co",
+      password: "password",
+      phone: "1213213213",
+    });
+    expect(resp1.statusCode).toEqual(400);
+    expect(resp1.body.error.err.message).toEqual(
+      '"email" length must be at least 8 characters long'
+    );
+
+    const buffer = crypto.randomBytes(31);
+    const longString = buffer.toString("hex"); //string length = 62
+
+    const resp2 = await request(app)
+      .post("/user/register")
+      .send({
+        firstName: "FN",
+        lastName: "LN",
+        email: `${longString}@test.com`,
+        password: "password",
+        phone: "1213213213",
+      });
+    expect(resp2.statusCode).toEqual(400);
+    expect(resp2.body.error.err.message).toEqual(
+      '"email" length must be less than or equal to 60 characters long'
+    );
+  });
+
+  it("returns schema error (BadRequestError) based on password threshold violations", async function () {
+    const resp1 = await request(app).post("/user/register").send({
+      firstName: "FN",
+      lastName: "LN",
+      email: "u1@email.com",
+      password: "123",
+      phone: "1213213213",
+    });
+    expect(resp1.statusCode).toEqual(400);
+    expect(resp1.body.error.err.message).toEqual(
+      '"password" length must be at least 5 characters long'
+    );
+
+    const buffer = crypto.randomBytes(12);
+    const longString = buffer.toString("hex"); //string length = 24
+
+    const resp2 = await request(app).post("/user/register").send({
+      firstName: "FN",
+      lastName: "LN",
+      email: `u1@email.com`,
+      password: longString,
+      phone: "1213213213",
+    });
+    expect(resp2.statusCode).toEqual(400);
+    expect(resp2.body.error.err.message).toEqual(
+      '"password" length must be less than or equal to 20 characters long'
+    );
+  });
+
+  it("returns schema error (BadRequestError) based on phone threshold violations", async function () {
+    const resp1 = await request(app).post("/user/register").send({
+      firstName: "FN",
+      lastName: "LN",
+      email: "u1@email.com",
+      password: "password",
+      phone: "12",
+    });
+    expect(resp1.statusCode).toEqual(400);
+    expect(resp1.body.error.err.message).toEqual(
+      "Phone number must have 10 digits."
+    );
+
+    const buffer = crypto.randomBytes(60);
+    const longString = buffer.toString("hex"); //string length = 120
+
+    const resp2 = await request(app).post("/user/register").send({
+      firstName: "FN",
+      lastName: "LN",
+      email: `u1@email.com`,
+      password: "password",
+      phone: longString,
+    });
+    expect(resp2.statusCode).toEqual(400);
+    expect(resp2.body.error.err.message).toEqual(
       "Phone number must have 10 digits."
     );
   });
@@ -161,7 +293,6 @@ describe("POST /user/verify", function () {
       `/user/verify?token=${invalidToken}&id=${invalidId}`
     );
     expect(resp.statusCode).toEqual(400);
-
     expect(resp.body.error.err.message).toEqual(
       "Your registration link does not exist. Ensure the original link we e-mailed you has not been modified."
     );

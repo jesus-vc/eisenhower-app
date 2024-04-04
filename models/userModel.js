@@ -15,6 +15,23 @@ import sendEmailRegistration from "../utils/email.js";
 /** Related functions for users */
 
 export default class User {
+  /** Returns userId for email. **/
+
+  static async getId(email) {
+    const userId = await pool.query(
+      `SELECT id
+        FROM users
+        WHERE email = $1`,
+      [email]
+    );
+
+    if (!userId.rows[0]) {
+      throw new BadRequestError(`Invalid email.`);
+    }
+
+    return userId.rows[0].id;
+  }
+
   /** Register a new account for user.
    *
    * Accepts { firstName, lastName, phone, email, password}.
@@ -125,23 +142,6 @@ export default class User {
     return jwt.sign(payload, SECRET_KEY, JWT_OPTIONS);
   }
 
-  /** Returns userId for email. **/
-
-  static async getId(email) {
-    const userId = await pool.query(
-      `SELECT id
-      FROM users
-      WHERE email = $1`,
-      [email]
-    );
-
-    if (!userId.rows[0]) {
-      throw new BadRequestError(`Invalid email.`);
-    }
-
-    return userId.rows[0].id;
-  }
-
   /** Generate and stores a token.
    *
    * Returns a token
@@ -233,4 +233,4 @@ export default class User {
   }
 }
 
-//TODO move token-related methods to a separate Token class?
+//PEER Lawrence, is it best to move the token-related methods above (createAuthToken, createRegistrationToken, and validToken) to a separate Token class or are they fine here?

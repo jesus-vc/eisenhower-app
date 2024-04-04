@@ -1,5 +1,6 @@
 import pool from "../db/db.js";
 import User from "../models/userModel.js";
+import Task from "../models/taskModel.js";
 
 export async function commonBeforeAll() {
   /** Must delete data in 'tasks' before users due to foreign key constraint  */
@@ -43,14 +44,38 @@ export async function commonBeforeAll() {
     [user1.id, user2.id, user3.id]
   );
 
-  //TODO replace query below with Task.add() method, once created.
-  await pool.query(
-    `INSERT INTO tasks(user_id, title, urgent, important, priority, timebox, completed)
-        VALUES ($1, 'Task 1', true, true, 'now', '30', false),
-               ($2, 'Task 2', true, false, 'delegate', '60', false),
-               ($3, 'Task 3', false, false, 'avoid', '90', true)`,
-    [user1.id, user2.id, user2.id]
-  );
+  await Task.create({
+    userId: user1.id,
+    title: "Task 1",
+    urgent: true,
+    important: true,
+    timebox: "30",
+    note: "Note 1",
+    category: " Finances",
+    deadlineDate: "1111-1-1",
+  });
+  await Task.create({
+    userId: user2.id,
+    title: "Task 2",
+    urgent: true,
+    important: false,
+    timebox: "60",
+    note: "Note 2",
+    category: " Health",
+    deadlineDate: "2222-2-2",
+  });
+  const task3 = await Task.create({
+    userId: user2.id,
+    title: "Task 3",
+    urgent: false,
+    important: false,
+    timebox: "90",
+    note: "Note 3",
+    category: "Family",
+    deadlineDate: "3333-3-3",
+  });
+
+  await Task.update({ taskId: task3.taskId, completed: true });
 }
 
 export async function commonBeforeEach() {

@@ -1,6 +1,6 @@
 import pool from "../db/db.js";
 import User from "./userModel";
-import { BadRequestError, UnauthorizedError } from "../expressError.js";
+import { BadRequestError } from "../expressError.js";
 
 import {
   commonBeforeAll,
@@ -136,7 +136,6 @@ describe("getId", function () {
 
   it("returns error for invalid email", async function () {
     const getIdPromise = User.getId("invalid@email.com");
-
     await expect(getIdPromise).rejects.toThrow(BadRequestError);
     await expect(getIdPromise).rejects.toThrow(`Invalid email.`);
   });

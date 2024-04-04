@@ -2,7 +2,7 @@ import { jest } from "@jest/globals";
 import request from "supertest";
 import app from "../app";
 import jwt from "jsonwebtoken";
-
+import crypto from "crypto";
 import {
   commonBeforeAll,
   commonBeforeEach,
@@ -118,16 +118,49 @@ describe("POST /auth/login", function () {
     );
   });
 
-  it("returns schema error with malformed password", async function () {
-    /** password must be greater than 5 characters */
-    const invalidPw = "1111";
-    const respLogin = await request(app).post("/auth/login").send({
-      email: newUser.email,
-      password: invalidPw,
+  it("returns schema errors for email and password threshold violations", async function () {
+    await registerUser();
+
+    const longString = crypto.randomBytes(31).toString("hex"); //string lenth = 62
+    const longEmail = `${longString}@test.com`;
+    const resp1 = await request(app).post("/auth/login").send({
+      email: longEmail,
+      password: newUser.password,
     });
-    expect(respLogin.statusCode).toEqual(400);
-    expect(respLogin.body.error.err.message).toEqual(
+    expect(resp1.statusCode).toEqual(400);
+    expect(resp1.body.error.err.message).toEqual(
+      '"email" length must be less than or equal to 60 characters long'
+    );
+
+    const shortEmail = `t@y.co`;
+    const resp2 = await request(app).post("/auth/login").send({
+      email: shortEmail,
+
+      password: newUser.password,
+    });
+    expect(resp2.statusCode).toEqual(400);
+    expect(resp2.body.error.err.message).toEqual(
+      '"email" length must be at least 8 characters long'
+    );
+
+    const shortPw = `123`;
+    const resp3 = await request(app).post("/auth/login").send({
+      email: newUser.email,
+      password: shortPw,
+    });
+    expect(resp3.statusCode).toEqual(400);
+    expect(resp3.body.error.err.message).toEqual(
       '"password" length must be at least 5 characters long'
+    );
+
+    const longPw = `${longString}@test.com`; //string lenth = 73
+    const resp4 = await request(app).post("/auth/login").send({
+      email: newUser.email,
+      password: longPw,
+    });
+    expect(resp4.statusCode).toEqual(400);
+    expect(resp4.body.error.err.message).toEqual(
+      '"password" length must be less than or equal to 30 characters long'
     );
   });
 });

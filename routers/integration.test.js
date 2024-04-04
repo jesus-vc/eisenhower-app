@@ -30,9 +30,9 @@ const fakeResp = {
 };
 sendEmailRegistration.mockReturnValue(fakeResp);
 
-/************************************** User Registration, Login, & Access  */
+/************************************** User Registration, Login, & Access to Tasks  */
 
-describe("User Registration, Login, & Access", () => {
+describe("User Registration, Login, & Access to Tasks", () => {
   it("should register, verify, and grant a new non-admin user access to the correct /tasks:userId route", async () => {
     const newUser = {
       firstName: "U8F",

@@ -40,6 +40,23 @@ CREATE TABLE tasks (
   timebox INT CHECK (timebox >= 1 AND timebox <= 600),
   completed BOOLEAN NOT NULL DEFAULT FALSE,
   note TEXT CHECK (LENGTH(note) >= 1 AND LENGTH(note)<=500),
-  category TEXT CHECK (LENGTH(note) >= 1 AND LENGTH(note)<=15),
+  category TEXT CHECK (LENGTH(category) >= 1 AND LENGTH(category)<=15),
   deadline_date DATE
-)
+);
+
+-- Trigger function to prevent updates to tasks.user_id
+CREATE FUNCTION prevent_user_id_update()
+RETURNS TRIGGER AS $prevent_user_id_update$
+BEGIN
+    IF TG_OP = 'UPDATE' THEN
+        RAISE EXCEPTION 'Updating user_id column is not allowed.';
+    END IF;
+    RETURN NEW;
+END;
+$prevent_user_id_update$ LANGUAGE plpgsql;
+
+-- Attach the trigger to the tasks table. Function will be called before an update operation on the tasks table.
+CREATE OR REPLACE TRIGGER prevent_user_id_update_trigger
+BEFORE UPDATE OF user_id ON tasks
+FOR EACH ROW
+EXECUTE FUNCTION prevent_user_id_update();
