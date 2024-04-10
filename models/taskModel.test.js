@@ -22,6 +22,7 @@ let task1;
 let task2;
 let task3;
 
+//FIXME with lawrence.
 /** //PEER
  * Lawrence, I am experimenting with how to retreive data from a DB that needs to be globally available to all tests in a single test file.
  *

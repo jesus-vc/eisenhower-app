@@ -9,7 +9,7 @@ import {
   taskSchemaUpdatePriority,
 } from "../schemas/taskSchemas.js";
 import { validateRequest } from "../middleware/validationMiddleware.js";
-
+import { BadRequestError } from "../expressError.js";
 import {
   ensureLoggedIn,
   userExistsAndCorrect,
@@ -28,9 +28,6 @@ const router = new express.Router();
  *
  * Authorization required: logged in as correct user or admin */
 
-//PEER Lawrence, below I process authentication (ensureLoggedIn) before schema validation (validateRequest) and authorization (userExistsAndCorrect).
-//Would you prefer I change this order? I personally think that running ensureLoggedIn first is okay because it's a lighter/faster operation than validateRequest and userExistsAndCorrect,
-// and it makes sense to me to ensure the user is logged in before schema validation.
 router.get(
   "/:userId",
   ensureLoggedIn,
@@ -100,12 +97,13 @@ router.post(
  *
  * newData optional fields: { title, urgent, important, timebox, completed, note, category, deadline_date }.
  *
- * Returns {task: {taskId, userId, fieldChanged1, fieldChanged2 ... }}
+ * Returns {task: {taskId, userId, fieldChanged1, fieldChanged2 ... }} or BadRequestError if empty request.
  *
  * Throws UnauthorizedError or NotFoundError (based on user privileges) if no taskID or userID found
  *
  * Authorization required: logged in as correct user or admin */
 
+//FIXME with lawrence.
 /** //PEER Lawrence, which route hierarchy is better:
 current:
 -  patch(tasks/:userId/:taskId) 
@@ -127,24 +125,21 @@ router.patch(
   userExistsAndCorrect,
   taskExistsAndCorrect,
   async function (req, res, next) {
-    //PEER Lawrence, if a client does not supply a request body, a successful and empty 200 response {} is returned.
-    // Is this an acceptable approach?
     try {
       if (Object.keys(req.body).length > 0) {
         const task = await Task.update({
-          /** //PEER Lawrence, using Number() below doesn't seem necessary, as all my tests still pass without it.
-           * But woud you agree that it's still best practice to explicitly convert req.params data from string to number before performing DB queries where the expected data type is a number?
-           */
           taskId: Number(req.params.taskId),
           ...req.body,
         });
         return res.status(201).json({ task });
       } else {
-        return res.status(200).json({});
+        throw new BadRequestError(
+          "Empty request to update a task is not allowed."
+        );
       }
     } catch (error) {
-      console.log("error from PATCH /task/:userId/:taskId/");
-      console.log(error);
+      // console.log("error from PATCH /task/:userId/:taskId/");
+      // console.log(error);
       return next(error);
     }
   }

@@ -2,6 +2,8 @@ import pool from "../db/db.js";
 import User from "../models/userModel.js";
 import Task from "../models/taskModel.js";
 
+import config from "../jest.config.js";
+
 export async function commonBeforeAll() {
   /** Must delete data in 'tasks' before users due to foreign key constraint  */
   await pool.query("DELETE FROM tasks");
@@ -33,6 +35,29 @@ export async function commonBeforeAll() {
     password: "password3",
     verified: "true",
   });
+
+  // console.log("id");
+  // console.log(user1);
+  // console.log("b4");
+  // console.log(config);
+
+  // globals: {
+  //   testDataRouters: {
+  //     user1Id: "",
+  //     user2Id: "",
+  //     user3Id: "",
+  //   },
+  // },
+
+  config.globals.testDataRouters.user1Id = user1.id;
+  config.globals.testDataRouters.user2Id = user2.id;
+  config.globals.testDataRouters.user3Id = user3.id;
+
+  // console.log("after");
+  // console.log(config);
+
+  // console.log("config");
+  // console.log(config);
 
   await User.verifyAccount(user1.id);
   await User.verifyAccount(user2.id);

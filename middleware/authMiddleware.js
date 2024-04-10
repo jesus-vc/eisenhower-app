@@ -52,6 +52,7 @@ export function ensureIsAdmin(req, res, next) {
   }
 }
 
+//FIXME with lawrence. does this touch on entity relationship?
 //PEER Review this logic with lawrence.
 // Should I de-couple the logic of checking for existince of user and whether user is correct (has correct access)?
 //if I decouple, I believe I'd have to perform SELECT query twice.

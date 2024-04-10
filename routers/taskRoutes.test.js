@@ -14,6 +14,8 @@ import {
 } from "./_testCommon";
 import crypto from "crypto";
 
+import config from "../jest.config.js";
+
 /************************************** Hooks */
 
 beforeAll(commonBeforeAll);
@@ -39,6 +41,7 @@ const getTaskIds = async () => {
   const taskIds = await pool.query("SELECT id FROM tasks ORDER BY id ASC");
   return taskIds.rows;
 };
+
 /************************************** GET /task/:userId */
 
 describe("GET /task/:userId", function () {
@@ -1187,6 +1190,7 @@ describe("PATCH task/:userId/:taskId { newData }", function () {
     });
   });
 
+  //FIXME with lawrence.
   //PEER Lawrence, should I block dupliate keys passed by the client?
   it("uses last instance if duplicate keys", async function () {
     const [user1, user2, user3] = await getUserIds();
@@ -1228,7 +1232,7 @@ describe("PATCH task/:userId/:taskId { newData }", function () {
     });
   });
 
-  it("returns empty reponse for no updated fields", async function () {
+  it("returns BadRequestError reponse for no updated fields", async function () {
     const [user1, user2, user3] = await getUserIds();
     const [task1, task2, task3] = await getTaskIds();
     const updatedTask = {};
@@ -1236,8 +1240,10 @@ describe("PATCH task/:userId/:taskId { newData }", function () {
       .patch(`/task/${user2.id}/${task3.id}/`)
       .send(updatedTask)
       .set("authorization", `Bearer ${await u2Token}`);
-    expect(resp1.statusCode).toEqual(200);
-    expect(resp1.body).toEqual({});
+    expect(resp1.statusCode).toEqual(400);
+    expect(resp1.body.error.err.message).toEqual(
+      "Empty request to update a task is not allowed."
+    );
   });
 
   it("throws UnauthorizedError to non-admin user for non-existing taskId", async function () {
@@ -1345,7 +1351,7 @@ describe("PATCH task/:userId/:taskId { newData }", function () {
     expect(resp1.statusCode).toEqual(400);
     expect(resp1.body.error.err.message).toEqual('"priority" is not allowed');
   });
-
+  //FIXME with lawrence.
   // PEER Lawrence, if unecessary fields are supplied in the request body or URL path paremeters, is it best to return a specific error such as BadRequestError or simply drop these unecessary fields and continue processing only valid fields?
   // For example, below in resp1 and resp2, the client supplies the unecessary fields of userId and user_id in the request body, which triggers schema validation to throw errors. Would it better to drop these fields and continue processing with only allowed fields such as 'title'?
   it("returns BadRequestError if 'user_id' or 'userId' fields are in request body", async function () {

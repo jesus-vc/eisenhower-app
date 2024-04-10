@@ -22,6 +22,7 @@ export const getUrgentAndImportant = (priority) => {
   return priorityMap[priority];
 };
 
+//FIXME with lawrence.
 //PEER - Lawrence, below inside of removeTimezone(), do you prefer I use the array.map method instead of a for-loop? The loop doesn't create a new array, which reduces memory consumption, I believe.
 //But I also understand that creating a new array can help reduce unexpected side-effects when modifying the original array, especially when dealing with asynchronous programming.
 
@@ -90,7 +91,7 @@ export const buildQueryCreateTask = (createData, jsToSql) => {
 export const buildQueryGetByFilters = (taskFilters, userId, jsToSql) => {
   const whereValues = [];
   const whereConditions = [];
-
+  //FIXME with lawrence.
   /**
    * //PEER Lawrence, do you prefer version 1 or version 2 below, or do you have a better alternative?
    *  Version 1 is longer but avoids mutating the original taskFilters argument.
