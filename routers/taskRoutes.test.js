@@ -24,11 +24,7 @@ afterEach(commonAfterEach);
 afterAll(commonAfterAll);
 
 /** //REFACTOR
- * Currently, each test below calls getUserIds which means this test suite makes repeated DB calls.
- * This doesn't seem scalabe and certainly slows down the test. So find a good method to reduce DB calls.
- * Some options that I need to research:
- * - what is the proper way to retrieve and store globally accessible data for all tests in a single test suite?
- * - could it involve creating a Tasks/users and Tasks/all route solely for admins?
+ * Mock database data/queries as recommendec by Lawrence in next PR.
  */
 
 /************************************** Reusable functions */
