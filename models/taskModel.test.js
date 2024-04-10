@@ -55,6 +55,8 @@ describe("hooks to get global data", function () {
   });
 });
 
+// const userIds = await pool.query("SELECT id FROM users ORDER BY id ASC");
+
 /************************************** getAll */
 
 describe("getAll", function () {
