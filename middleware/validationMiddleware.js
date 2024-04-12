@@ -13,6 +13,7 @@ import { BadRequestError } from "../expressError.js";
  * ]);
  */
 
+//PEER would it be better if I use array.map or array.reduce here instead of for-loop?
 export const validateRequest = (validations) => {
   return (req, res, next) => {
     try {

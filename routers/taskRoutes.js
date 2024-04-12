@@ -103,8 +103,11 @@ router.post(
  *
  * Authorization required: logged in as correct user or admin */
 
-//FIXME with lawrence.
-/** //PEER Lawrence, which route hierarchy is better:
+/** 
+ * //FIXME with lawrence review best option. Focus on making this intuitive for API consumer.
+ * 
+ * //PEER Lawrence, which route hierarchy is better:
+ * 
 current:
 -  patch(tasks/:userId/:taskId) 
 
@@ -112,6 +115,9 @@ other options:
 - patch(tasks/:taskId/:userId/)
 - patch(tasks/user/:userId/taskId/:taskId)
 - patch(tasks/taskId/:taskId/user/:userId/)
+- patch(users/:userId/tasks/:taskId/)
+
+//PEER Also should I instead pass the :userId and/or :taskId parameters in the body?
  **/
 
 router.patch(

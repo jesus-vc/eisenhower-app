@@ -13,6 +13,7 @@ export const taskCreateSchema = Joi.object({
   deadlineDate: Joi.date().format("YYYY-MM-DD"),
 });
 
+//REFACTOR As I evolve the API routes, consider combining schemas, including using Joi's 'extend' feature which allows for establishing base schemas that can be customized.
 export const taskUpdateBodySchema = Joi.object({
   title: Joi.string().min(3).max(30),
   important: Joi.boolean(),
