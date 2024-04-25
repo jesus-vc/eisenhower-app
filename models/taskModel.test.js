@@ -22,8 +22,7 @@ let task1;
 let task2;
 let task3;
 
-//FIXME with lawrence.
-/** //PEER
+/** //REFACTOR As adviced by Lawrence, use Mock functions instead. Mock database data/queries.
  * Lawrence, I am experimenting with how to retreive data from a DB that needs to be globally available to all tests in a single test file.
  *
  * Could you help me compare two approaches I've tried thus far?
@@ -55,17 +54,10 @@ describe("hooks to get global data", function () {
   });
 });
 
-// const userIds = await pool.query("SELECT id FROM users ORDER BY id ASC");
-
 /************************************** getAll */
 
 describe("getAll", function () {
   it("returns expected tasks and fields per user", async function () {
-    //TODO Delete once I review with Lawrence the hooks section above.
-    // const allTasks = await pool.query("SELECT id FROM users");
-    // const user1 = allTasks.rows[0].id;
-    // const user2 = allTasks.rows[1].id;
-    // const user3 = allTasks.rows[2].id;
     const tasks1 = await Task.getAll(user1);
     const tasks2 = await Task.getAll(user2);
     const tasks3 = await Task.getAll(user3);
@@ -117,12 +109,6 @@ describe("getAll", function () {
 
   it("does not expose unecessary data", async function () {
     const unnecessaryFields = "userId";
-    //TODO Delete once I review with Lawrence the hooks section above.
-    // const allTasks = await pool.query("SELECT id FROM users");
-    // const user1 = allTasks.rows[0].id;
-    // const user2 = allTasks.rows[1].id;
-    // const user3 = allTasks.rows[2].id;
-
     const tasks1 = await Task.getAll(user1);
     const tasks2 = await Task.getAll(user2);
     const tasks3 = await Task.getAll(user3);

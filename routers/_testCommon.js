@@ -1,8 +1,6 @@
 import pool from "../db/db.js";
-import User from "../models/userModel.js";
+import Auth from "../models/authModel.js";
 import Task from "../models/taskModel.js";
-
-import config from "../jest.config.js";
 
 export async function commonBeforeAll() {
   /** Must delete data in 'tasks' before users due to foreign key constraint  */
@@ -10,7 +8,7 @@ export async function commonBeforeAll() {
   await pool.query("DELETE FROM tokens_registration");
   await pool.query("DELETE FROM users");
 
-  const user1 = await User.registerAccount({
+  const user1 = await Auth.registerAccount({
     firstName: "U1F",
     lastName: "U1L",
     phone: "1111111111",
@@ -18,7 +16,7 @@ export async function commonBeforeAll() {
     password: "password1",
   });
 
-  const user2 = await User.registerAccount({
+  const user2 = await Auth.registerAccount({
     firstName: "U2F",
     lastName: "U2L",
     phone: "2222222222",
@@ -27,7 +25,7 @@ export async function commonBeforeAll() {
     verified: "true",
   });
 
-  const user3 = await User.registerAccount({
+  const user3 = await Auth.registerAccount({
     firstName: "U3F",
     lastName: "U3L",
     phone: "3333333333",
@@ -36,11 +34,11 @@ export async function commonBeforeAll() {
     verified: "true",
   });
 
-  await User.verifyAccount(user1.id);
-  await User.verifyAccount(user2.id);
-  await User.verifyAccount(user3.id);
+  await Auth.verifyAccount(user1.id);
+  await Auth.verifyAccount(user2.id);
+  await Auth.verifyAccount(user3.id);
 
-  //TODO replace query below with a User.update() method and route solely for admins, once created.
+  //TODO Revisit in future: Replace query below with a Auth.update() method and route solely for admins, once created.
   await pool.query(
     `UPDATE users SET is_admin = true WHERE id IN ($1, $2, $3)`,
     [user1.id, user2.id, user3.id]
@@ -95,15 +93,15 @@ export async function commonAfterAll() {
   await pool.end();
 }
 
-export const u1Token = User.createAuthToken({
+export const u1Token = Auth.createAuthToken({
   email: "u1@email.com",
   isAdmin: false,
 });
-export const u2Token = User.createAuthToken({
+export const u2Token = Auth.createAuthToken({
   email: "u2@email.com",
   isAdmin: false,
 });
-export const adminToken = User.createAuthToken({
+export const adminToken = Auth.createAuthToken({
   email: "admin1@email.com",
   isAdmin: true,
 });

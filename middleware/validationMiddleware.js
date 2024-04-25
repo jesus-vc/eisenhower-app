@@ -7,17 +7,16 @@ import { BadRequestError } from "../expressError.js";
  * @throws {BadRequestError} Throws BadRequestError if validation fails.
  *
  * @example
- * validateRequest([
+ * validateSchemas([
  *   { schema: taskUpdateBodySchema, reqBody: true },
  *   { schema: taskSchemaUpdatePath, userIdParam: true, taskIdParam: true }
  * ]);
  */
 
-//PEER would it be better if I use array.map or array.reduce here instead of for-loop?
-export const validateRequest = (validations) => {
+export const validateSchemas = (validations) => {
   return (req, res, next) => {
     try {
-      for (const validation of validations) {
+      validations.forEach((validation) => {
         const requestData = [];
         if (validation.userIdParam)
           requestData.push({ userId: req.params.userId });
@@ -30,8 +29,8 @@ export const validateRequest = (validations) => {
           Object.assign({}, ...requestData)
         );
         if (error) throw new BadRequestError(error.message);
-      }
-      return next(); //PEER Lawrence am I correct in having this return next() outside the for-loop? I believe this allows the next() fn being called only after all validations inside the for-loop have completed.
+      });
+      return next();
     } catch (error) {
       return next(error);
     }

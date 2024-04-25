@@ -13,10 +13,6 @@ export const userRegisterSchema = Joi.object({
   isAdmin: Joi.boolean(),
 });
 
-export const userIdSchema = Joi.object({
-  userId: Joi.number().positive().required(),
-});
-
 export const userVerifySchema = Joi.object({
   token: Joi.string()
     .length(26)
@@ -30,5 +26,8 @@ export const userVerifySchema = Joi.object({
       "string.pattern.base":
         "Your registration link does not exist. Ensure the original link we e-mailed you has not been modified.",
     }),
-  id: Joi.number().positive().required(),
+  id: Joi.number()
+    .positive()
+    .messages({ "number.unsafe": '"userId" supplied is too large' })
+    .required(),
 });

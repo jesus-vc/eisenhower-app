@@ -1,7 +1,6 @@
 import express from "express";
 import userRoutes from "./routers/userRoutes.js";
 import authRoutes from "./routers/authRoutes.js";
-import taskRoutes from "./routers/taskRoutes.js";
 import { authenticateJWT } from "./middleware/authMiddleware.js";
 import { NotFoundError } from "./expressError";
 
@@ -13,17 +12,28 @@ app.use(authenticateJWT);
 /** Mount each individual router into the main application. */
 app.use("/auth", authRoutes);
 app.use("/user", userRoutes);
-app.use("/task", taskRoutes);
 
-/** Handle 404 errors -- this matches everything */
+/** Handle 404 errors -- this handles requests that do not match any routes above */
 app.use(function (req, res, next) {
   return next(new NotFoundError());
 });
 
+//PEER Lawrence, below is my handling of any unexpected database-level errors which will return a custom 500 error to the client. Is this okay?
 /** Generic error handler; anything unhandled goes here. */
 app.use(function (err, req, res, next) {
-  return res.status(err.status).json({
-    error: { err },
+  let status;
+  let message;
+
+  if (!err.status) {
+    status = 500;
+    message = "Unexpected error occurred. Please try again.";
+  } else {
+    status = err.status;
+    message = err.message;
+  }
+
+  return res.status(status).json({
+    error: { message, status },
   });
 });
 

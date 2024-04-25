@@ -1,4 +1,4 @@
-import { validateRequest } from "./validationMiddleware";
+import { validateSchemas } from "./validationMiddleware";
 import {
   taskCreateSchema,
   taskSchemaUpdatePriority,
@@ -9,9 +9,9 @@ import { BadRequestError } from "../expressError";
 import { userRegisterSchema, userVerifySchema } from "../schemas/userSchemas";
 import { authLoginSchema } from "../schemas/authSchemas";
 
-/************************************** validateRequest */
+/************************************** validateSchemas */
 
-describe("validateRequest", function () {
+describe("validateSchemas", function () {
   it("works: via 1 schema", function () {
     const req = {
       body: {
@@ -34,7 +34,7 @@ describe("validateRequest", function () {
       },
     ];
 
-    const middleware = validateRequest(validations);
+    const middleware = validateSchemas(validations);
     middleware(req, res, next);
 
     expect(next).toHaveBeenCalled();
@@ -59,7 +59,7 @@ describe("validateRequest", function () {
       { schema: taskSchemaUpdatePath, userIdParam: true, taskIdParam: true },
     ];
 
-    const middleware = validateRequest(validations);
+    const middleware = validateSchemas(validations);
     middleware(req, res, next);
 
     expect(next).toHaveBeenCalled();
@@ -87,7 +87,7 @@ describe("validateRequest", function () {
       { schema: taskSchemaUpdatePath, userIdParam: true, taskIdParam: true },
     ];
 
-    const middleware = validateRequest(validations);
+    const middleware = validateSchemas(validations);
     middleware(req, res, next);
   });
 
@@ -117,7 +117,7 @@ describe("validateRequest", function () {
       { schema: taskSchemaUpdatePath, userIdParam: true, taskIdParam: true },
     ];
 
-    const middleware = validateRequest(validations);
+    const middleware = validateSchemas(validations);
     middleware(req, res, next);
   });
 });

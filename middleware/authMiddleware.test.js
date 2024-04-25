@@ -2,11 +2,11 @@ import jwt from "jsonwebtoken";
 import pool from "../db/db.js";
 
 import { UnauthorizedError, NotFoundError } from "../expressError";
-import User from "../models/userModel";
+import Auth from "../models/authModel";
 import {
   authenticateJWT,
   ensureLoggedIn,
-  userExistsAndCorrect,
+  validateUser,
 } from "./authMiddleware";
 
 import { SECRET_KEY } from "../config";
@@ -97,7 +97,7 @@ describe("userExistsAndCorrect", function () {
 
   beforeAll(async () => {
     await pool.query("DELETE FROM users");
-    user1 = await User.registerAccount({
+    user1 = await Auth.registerAccount({
       firstName: "U1F",
       lastName: "U1L",
       phone: "1111111111",
@@ -122,7 +122,7 @@ describe("userExistsAndCorrect", function () {
       expect(err.message).toEqual("Not Found");
     };
 
-    userExistsAndCorrect(req, res, next);
+    validateUser(req, res, next);
   });
 
   it("works for correct user without admin access", async function () {
@@ -135,7 +135,7 @@ describe("userExistsAndCorrect", function () {
       expect(err).toBeFalsy();
     };
 
-    userExistsAndCorrect(req, res, next);
+    validateUser(req, res, next);
   });
 
   it("fails for incorrect user without admin access", async function () {
@@ -149,6 +149,6 @@ describe("userExistsAndCorrect", function () {
       expect(err.message).toEqual("Unauthorized");
     };
 
-    userExistsAndCorrect(req, res, next);
+    validateUser(req, res, next);
   });
 });

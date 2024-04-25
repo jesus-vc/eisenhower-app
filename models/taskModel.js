@@ -25,10 +25,8 @@ export default class Task {
       `,
       [userId]
     );
-
-    removeTimezone(allTasks.rows);
-
-    return allTasks.rows;
+    const allTasksUpdated = removeTimezone(allTasks.rows);
+    return allTasksUpdated;
   }
 
   /** Get all tasks given filters and userId
@@ -52,14 +50,12 @@ export default class Task {
       userId,
       jsToSql
     );
-
     const newTask = await pool.query(
       `${selectClause} ${whereClause}`,
       whereValues
     );
-
-    removeTimezone(newTask.rows);
-    return newTask.rows;
+    const newTaskUpdated = removeTimezone(newTask.rows);
+    return newTaskUpdated;
   }
 
   /** Create a new task (from 'taskData') for a user
@@ -88,9 +84,8 @@ export default class Task {
       `${insertQuery} ${returnStmt}`,
       insertValues
     );
-
-    removeTimezone(newTask.rows);
-    return newTask.rows[0];
+    const newTaskUpdated = removeTimezone(newTask.rows);
+    return newTaskUpdated[0];
   }
 
   /** Update a task with 'data'.
@@ -124,22 +119,12 @@ export default class Task {
       setValues
     );
 
-    //FIXME with lawrence.
-    /** //PEER
-     *  Lawrence, a couple questions:
-     *
-     * 1. Would you recommend I check for invalid taskId prior to all the prior processing that is conducted above?
-     * 2. The 'taskExistsAndCorrect' middleware at the Task router level already checks for invalid taskIds. But is it good to keep this secondary layer of taskId validation at the model layer?
-     */
-
     if (!updatedTask.rows[0]) {
       throw new NotFoundError(`Invalid taskId.`);
     }
 
-    //PEER Lawrence, below I created the removeTimezone helper function to remove timezones from the data, since the client does not need the timezone. Is this an okay practice? Or is this an anti-pattern?
-    removeTimezone(updatedTask.rows);
-
-    return updatedTask.rows[0];
+    const updatedTaskModified = removeTimezone(updatedTask.rows);
+    return updatedTaskModified[0];
   }
 
   /** Update a task's 'urgent' and 'important' values based on 'priority' provided
@@ -168,14 +153,11 @@ export default class Task {
       setValues
     );
 
-    //PEER Lawrence, would you recommend I check for invalid taskId prior to all the prior processing that is conducted above?
     if (!updatedTask.rows[0]) {
       throw new NotFoundError(`Invalid taskId.`);
     }
-
-    removeTimezone(updatedTask.rows);
-
-    return updatedTask.rows[0];
+    const updatedTaskModified = removeTimezone(updatedTask.rows);
+    return updatedTaskModified[0];
   }
 
   /** Deletes given task from database

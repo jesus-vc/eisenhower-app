@@ -1,69 +1,207 @@
 import { BadRequestError } from "../expressError.js";
+import Task from "../models/taskModel.js";
+
 import {
-  userRegisterSchema,
-  userVerifySchema,
-} from "../schemas/userSchemas.js";
+  taskCreateSchema,
+  taskGetSchema,
+  taskUpdateBodySchema,
+  taskSchemaUpdatePath,
+  taskSchemaDelete,
+  taskSchemaUpdatePriority,
+} from "../schemas/taskSchemas.js";
+import {
+  ensureLoggedIn,
+  validateUser,
+  validateTask,
+} from "../middleware/authMiddleware.js";
 import express from "express";
-import User from "../models/userModel.js";
-import sendEmailRegistration from "../utils/email.js";
-import { validateRequest } from "../middleware/validationMiddleware.js";
+import { validateSchemas } from "../middleware/validationMiddleware.js";
 
 const router = new express.Router();
 
-/** POST /user/register: {user} => email OTP (one-time pw)
+/** GET /userId => {tasks: [{taskId, title, urgent, important, priority, timebox, completed, note, category, deadlineDate }, ...]}
  *
- * User must include {firstName, lastName, email, password}
+ * Get all tasks by userId. Filters are optional.
  *
- * Returns 200 status code and sends email with OTP link.
+ * Allowed filters { title, completed, priority, deadlineDate}
  *
- * Authorization required: none */
+ * Throws UnauthorizedError or NotFoundError (based on user privileges) if no userID found
+ *
+ * Authorization required: logged in as correct user or admin */
 
-router.post(
-  "/register",
-  validateRequest([{ schema: userRegisterSchema, reqBody: true }]),
+router.get(
+  "/:userId/tasks/",
+  ensureLoggedIn,
+  validateSchemas([
+    { schema: taskGetSchema, userIdParam: true, reqQuery: true },
+  ]),
+  validateUser,
   async function (req, res, next) {
     try {
-      const newUser = await User.registerAccount({ ...req.body });
-      const jsonResponse = await sendEmailRegistration(newUser);
-      return res.status(200).json(jsonResponse);
-    } catch (error) {
-      // console.log("error from POST user/register");
-      // console.log(error);
-      //PEER Lawrence, below is my new duplicate constraint error handling where I'm catching the DB-level error to send the custom 'BadRequestError'. Is this okay?
-      if (error.code === "23505" && error.constraint === "users_email_key") {
-        return next(
-          new BadRequestError(
-            `Your ${req.body.email} is already registered or pending registration.`
-          )
-        );
+      // Handle request with filters
+      if (Object.keys(req.query).length > 0) {
+        const tasks = await Task.getByFilters({
+          userId: req.params.userId,
+          ...req.query,
+        });
+        return res.status(200).json({ tasks });
       }
+      const tasks = await Task.getAll(req.params.userId);
+      return res.status(200).json({ tasks });
+    } catch (error) {
+      // console.log("caught error");
+      // console.log(error);
       return next(error);
     }
   }
 );
 
-/** POST /user/verify: {registrationToken} & {userId} => updates users as 'true' for registered
+/** POST /userId { taskData } =>  { task }
  *
- * Registration token must be unexpired and exist in tokens_registration table
+ * Creates new task.
  *
- * Returns 200 status code and redirects to /sign-in
+ * taskData required fields: { title, urgent, important }
  *
- * Authorization required: none */
+ * taskData optional fields for 'taskData': { timebox, note, category, deadlineDate}
+ *
+ * Returns {task: {taskId, userId, title, urgent, important, priority, timebox, completed, note, category, deadlineDate }}
+ *
+ * Throws UnauthorizedError or NotFoundError (based on user privileges) if no userID found
+ *
+ * Authorization required: logged in as correct user or admin */
 
 router.post(
-  "/verify",
-  validateRequest([{ schema: userVerifySchema, reqQuery: true }]),
+  "/:userId/tasks/",
+  ensureLoggedIn,
+  validateSchemas([
+    { schema: taskCreateSchema, userIdParam: true, reqBody: true },
+  ]),
+  validateUser,
   async function (req, res, next) {
     try {
-      if (await User.validToken(req.query)) {
-        await User.verifyAccount(req.query.id);
-        //PEER Lawrence, should I also remove this res.redirect below?
-        return res.redirect(302, "/auth/login");
-      }
+      const task = await Task.create({
+        userId: req.params.userId,
+        ...req.body,
+      });
+      return res.status(201).json({ task });
     } catch (error) {
-      // console.log("error from /verify route");
+      // console.log("error from POST /task/:userId");
       // console.log(error);
       return next(error);
+    }
+  }
+);
+
+/** PATCH /:userId/:taskId { newData } =>  { task }
+ *
+ * Updates a task based on fields provided.
+ *
+ * newData optional fields: { title, urgent, important, timebox, completed, note, category, deadline_date }.
+ *
+ * Returns {task: {taskId, userId, fieldChanged1, fieldChanged2 ... }} or BadRequestError if empty request.
+ *
+ * Throws UnauthorizedError or NotFoundError (based on user privileges) if no taskID or userID found
+ *
+ * Authorization required: logged in as correct user or admin */
+
+router.patch(
+  "/:userId/tasks/:taskId",
+  ensureLoggedIn,
+  validateSchemas([
+    { schema: taskUpdateBodySchema, reqBody: true },
+    { schema: taskSchemaUpdatePath, userIdParam: true, taskIdParam: true },
+  ]),
+  validateUser,
+  validateTask,
+  async function (req, res, next) {
+    try {
+      if (Object.keys(req.body).length > 0) {
+        const task = await Task.update({
+          taskId: Number(req.params.taskId),
+          ...req.body,
+        });
+        return res.status(201).json({ task });
+      } else {
+        throw new BadRequestError(
+          "Empty request to update a task is not allowed."
+        );
+      }
+    } catch (error) {
+      // console.log("error from PATCH /task/:userId/:taskId/");
+      // console.log(error);
+      return next(error);
+    }
+  }
+);
+
+/** PATCH :userId/:taskId/priority { newData } =>  { task }
+ *
+ * Updates a task's 'priority' status.
+ *
+ * Required keys: { priority } with values of {'now', 'schedule', 'delegate' ,'avoid' }
+ *
+ * Returns {task: { taskId, userId, urgent, important, priority }}
+ *
+ * Throws UnauthorizedError or NotFoundError (based on user privileges) if no taskID or userID found
+ *
+ * Authorization required: logged in as correct user or admin */
+
+router.patch(
+  "/:userId/tasks/:taskId/priority",
+  ensureLoggedIn,
+  validateSchemas([
+    { schema: taskSchemaUpdatePriority, reqBody: true },
+    { schema: taskSchemaUpdatePath, userIdParam: true, taskIdParam: true },
+  ]),
+  /** // PEER Lawrence, per our talk on decoupling the logic of request validation functions, below is are two new functions: validateUser and validateTask.
+   * These functions call additional functions that independently validate user and task requests.
+   * Is this okay?
+   */
+  validateUser,
+  validateTask,
+  async function (req, res, next) {
+    try {
+      if (Object.keys(req.body).length > 0) {
+        const task = await Task.updatePriority({
+          taskId: req.params.taskId,
+          priority: req.body.priority,
+        });
+        return res.status(201).json({ task });
+      } else {
+        return res.status(200).json({});
+      }
+    } catch (error) {
+      // console.log("error from PATCH /task/:userId/:taskId/priority");
+      // console.log(error);
+      return next(error);
+    }
+  }
+);
+
+/** DELETE /taskId  =>  { deleted: taskId }
+ *
+ * Deletes given task from database
+ *
+ * Throws UnauthorizedError or NotFoundError (based on user privileges) if no taskID found
+ *
+ * Authorization required: logged in as correct user or admin */
+
+router.delete(
+  "/:userId/tasks/:taskId",
+  ensureLoggedIn,
+  validateSchemas([
+    { schema: taskSchemaDelete, userIdParam: true, taskIdParam: true },
+  ]),
+  validateUser,
+  validateTask,
+  async function (req, res, next) {
+    try {
+      await Task.delete(req.params.taskId);
+      return res.json({ deleted: req.params.taskId });
+    } catch (err) {
+      // console.log("error from DELETE /task/:userId");
+      // console.log(err);
+      return next(err);
     }
   }
 );

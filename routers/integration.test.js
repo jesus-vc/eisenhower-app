@@ -22,7 +22,7 @@ afterAll(commonAfterAll);
 /************************************** Mocks */
 /** Mock sendEmailRegistration fn to avoid sending external emails
  * and to capture arguments sent to the fn.
- * This fn is called on backend by the /user/register route */
+ * This fn is called on backend by the /auth/register route */
 jest.mock("../utils/email.js");
 import sendEmailRegistration from "../utils/email.js";
 const fakeResp = {
@@ -52,7 +52,7 @@ describe("User Registration, Login, & Access to Tasks", () => {
 
     /** Register a user */
     const registerResponse = await request(app)
-      .post("/user/register")
+      .post("/auth/register")
       .send(newUser);
 
     expect(registerResponse.status).toBe(200);
@@ -60,10 +60,9 @@ describe("User Registration, Login, & Access to Tasks", () => {
 
     /** Verify the user */
     const verifyResponse = await request(app).post(
-      `/user/verify?token=${plainTextToken}&id=${userId}`
+      `/auth/verify?token=${plainTextToken}&id=${userId}`
     );
-    expect(verifyResponse.status).toBe(302);
-    expect(verifyResponse.text).toBe("Found. Redirecting to /auth/login");
+    expect(verifyResponse.status).toBe(200);
 
     /** Login verified user */
     const respLogin = await request(app).post("/auth/login").send({
@@ -80,38 +79,38 @@ describe("User Registration, Login, & Access to Tasks", () => {
       isAdmin: false,
     });
 
-    /** Have access to the correct /tasks:userId route */
+    /** Have access to the correct user/:userId/tasks route */
     const respTasks = await request(app)
-      .get(`/task/${userId}`)
+      .get(`/user/${userId}/tasks`)
       .set("authorization", `Bearer ${await token}`);
     expect(respTasks.statusCode).toEqual(200);
     expect(respTasks.body).toEqual({
       tasks: [],
     });
 
-    /** Unauthorized to access other users' /tasks:userId route */
+    /** Unauthorized to access other users' user/:userId/tasks route */
     const otherUserIds = await pool.query(
       `SELECT id FROM users WHERE NOT email=$1 ORDER BY id ASC`,
       [newUser.email]
     );
     const badReq1 = await request(app)
-      .get(`/task/${otherUserIds.rows[0].id}`)
+      .get(`/user/${otherUserIds.rows[0].id}/tasks`)
       .set("authorization", `Bearer ${await token}`);
     expect(badReq1.statusCode).toEqual(401);
 
     const badReq2 = await request(app)
-      .get(`/task/${otherUserIds.rows[0].id}`)
+      .get(`/user/${otherUserIds.rows[0].id}/tasks`)
       .set("authorization", `Bearer ${await token}`);
     expect(badReq2.statusCode).toEqual(401);
 
     const badReq3 = await request(app)
-      .get(`/task/${otherUserIds.rows[2].id}`)
+      .get(`/user/${otherUserIds.rows[2].id}/tasks`)
       .set("authorization", `Bearer ${await token}`);
     expect(badReq3.statusCode).toEqual(401);
 
     /** Admin can access the new /:userId routes */
     const adminReq = await request(app)
-      .get(`/task/${userId}`)
+      .get(`/user/${userId}/tasks`)
       .set("authorization", `Bearer ${await adminToken}`);
     expect(adminReq.statusCode).toEqual(200);
     expect(adminReq.body).toEqual({
