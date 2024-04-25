@@ -1,12 +1,5 @@
 # A Task Priorization app that leverages the Eisenhower Methodology.
 
-## /routers/ contains four Backend routes built thus far:
-
-    - POST /user/register
-    - POST /user/verify
-    - POST /auth/login
-    - GET /task/:userId
-
 ## Requirements to start app
 
     - Install psql
