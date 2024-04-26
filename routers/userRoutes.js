@@ -153,10 +153,6 @@ router.patch(
     { schema: taskSchemaUpdatePriority, reqBody: true },
     { schema: taskSchemaUpdatePath, userIdParam: true, taskIdParam: true },
   ]),
-  /** // PEER Lawrence, per our talk on decoupling the logic of request validation functions, below is are two new functions: validateUser and validateTask.
-   * These functions call additional functions that independently validate user and task requests.
-   * Is this okay?
-   */
   validateUser,
   validateTask,
   async function (req, res, next) {

@@ -18,8 +18,6 @@ app.use(function (req, res, next) {
   return next(new NotFoundError());
 });
 
-//PEER Lawrence, below is my handling of any unexpected database-level errors which will return a custom 500 error to the client. Is this okay?
-/** Generic error handler; anything unhandled goes here. */
 app.use(function (err, req, res, next) {
   let status;
   let message;
