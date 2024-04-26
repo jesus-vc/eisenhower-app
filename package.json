@@ -1,0 +1,32 @@
+{
+  "name": "eisenhower-app",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node node_modules/jest/bin/jest.js --runInBand --watch"
+  },
+  "author": "Jesus VC",
+  "license": "ISC",
+  "dependencies": {
+    "@joi/date": "^2.1.0",
+    "base32-encode": "^2.0.0",
+    "bcrypt": "^5.1.1",
+    "dotenv": "^16.4.1",
+    "express": "^4.18.2",
+    "joi": "^17.12.0",
+    "jsonwebtoken": "^9.0.2",
+    "nodemailer": "^6.9.8",
+    "pg": "^8.11.3"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.23.9",
+    "@babel/preset-env": "^7.23.9",
+    "babel-jest": "^29.7.0",
+    "jest": "^29.7.0",
+    "nodemailer-mock": "^2.0.4",
+    "supertest": "^6.3.4"
+  }
+}
