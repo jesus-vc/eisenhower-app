@@ -3,7 +3,6 @@ import userRoutes from "./routers/userRoutes.js";
 import authRoutes from "./routers/authRoutes.js";
 import { authenticateJWT } from "./middleware/authMiddleware.js";
 import { NotFoundError } from "./expressError";
-import { taskSchemaUpdatePriority } from "./schemas/taskSchemas.js";
 
 const app = express();
 

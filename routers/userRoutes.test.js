@@ -110,7 +110,7 @@ describe("GET /user/:userId", function () {
   });
 
   it("ok for correct users", async function () {
-    //TODO Once I refactor using mocked databases, this is where I should be calling the mocked DB by injecting a fake database into the Model.
+    //REFACTOR Once I refactor using mocked databases, this is where I should be calling the mocked DB by injecting a fake database into the Model.
 
     const userIds = await getUserIds();
     const user1 = userIds[0].id;
