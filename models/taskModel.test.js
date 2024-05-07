@@ -23,6 +23,11 @@ let task2;
 let task3;
 
 /** //REFACTOR As adviced by Lawrence, use Mock functions instead. Mock database data/queries.
+ * 1. At route level, test for results (status code and payload returned)
+ *  2. At model layer, I already tested db, so the db can be mocked at router level.
+ *
+ * Additional Notes:
+ *
  * Lawrence, I am experimenting with how to retreive data from a DB that needs to be globally available to all tests in a single test file.
  *
  * Could you help me compare two approaches I've tried thus far?
