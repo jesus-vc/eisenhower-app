@@ -14,6 +14,23 @@ import sendEmailRegistration from "../utils/email.js";
 
 /** Related functions for user authentication and authorization */
 
+/** //FIXME
+ * 1. Finish reading 2 articles on testing pyramid and mocking. DONE
+ 
+ * 2. Understand model and service layers and answer: 
+ *  - In PostgresSQL, do I need to build a model
+ * - If so, how do build a mdoel (JSON) in NodeJs. 
+ * - Would using a dependency injection model be required to better unit testing and raise the need for mocks?
+ * 3. Actions
+ *  - Write a code sample (if necessary) and share with Lawrence, explanining how I plan to refactor.
+ *      - Rename models to 'service'
+ *      - my plan for mocking.
+ *  - Keep in mind:
+ *    - No need to test model.
+ *    - At service level,
+ *    - Would create a docker container of Postgress with seeded data (a file)
+ */
+
 export default class Auth {
   /** Register a new account for user.
    *
