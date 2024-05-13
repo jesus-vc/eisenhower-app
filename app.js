@@ -2,7 +2,7 @@ import express from "express";
 import userRoutes from "./routers/userRoutes.js";
 import authRoutes from "./routers/authRoutes.js";
 import { authenticateJWT } from "./middleware/authMiddleware.js";
-import { NotFoundError } from "./expressError";
+import { NotFoundError } from "./expressError.js";
 
 const app = express();
 
