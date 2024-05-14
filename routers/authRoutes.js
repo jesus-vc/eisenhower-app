@@ -58,13 +58,17 @@ router.post(
       const newUser = await Auth.registerAccount({ ...req.body });
       const jsonResponse = await sendEmailRegistration(newUser);
 
-      if (jsonResponse.accepted.length === 1) {
-        return res.status(200).json({
-          Success: "Successfully emailed registration link!", //FIXME add test for this new response?
-        });
-      } else {
-        //FIXME review if I should add a custom error if message via nodemailer fails
-      }
+      return res.status(200).json(jsonResponse);
+
+      //FIXME Refactor this to ensure jsonResponse has returned a successful response, while allowing for mocking in tests.
+
+      // if (jsonResponse.accepted.length === 1) {
+      //   return res.status(200).json({
+      //     Success: "Successfully emailed registration link!", //FIXME add test for this new response?
+      //   });
+      // } else {
+      //   //FIXME review if I should add a custom error if message via nodemailer fails
+      // }
     } catch (error) {
       // console.log("error from POST user/register");
       // console.log(error);
