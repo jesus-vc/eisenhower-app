@@ -4,7 +4,7 @@
 
     - Install psql
     - Run npm install
-    - .env file with variables: GMAIL_ACCOUNT, GMAIL_PASSWORD, SECRET_KEY
+    - .env file with variables: EMAIL_ACCOUNT, EMAIL_PASSWORD, SECRET_KEY
 
 ## Run tests from root directory:
 

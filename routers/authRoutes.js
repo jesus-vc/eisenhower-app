@@ -44,7 +44,7 @@ router.post(
 
 /** POST /auth/register: {user} => email OTP (one-time pw)
  *
- * User must include {firstName, lastName, email, password}
+ * User must include {firstName, lastName, email, password, phone}
  *
  * Returns 200 status code and sends email with OTP link.
  *
@@ -57,7 +57,14 @@ router.post(
     try {
       const newUser = await Auth.registerAccount({ ...req.body });
       const jsonResponse = await sendEmailRegistration(newUser);
-      return res.status(200).json(jsonResponse);
+
+      if (jsonResponse.accepted.length === 1) {
+        return res.status(200).json({
+          Success: "Successfully emailed registration link!", //FIXME add test for this new response?
+        });
+      } else {
+        //FIXME review if I should add a custom error if message via nodemailer fails
+      }
     } catch (error) {
       // console.log("error from POST user/register");
       // console.log(error);
@@ -88,7 +95,10 @@ router.post(
     try {
       if (await Auth.validToken(req.query)) {
         await Auth.verifyAccount(req.query.id);
-        return res.sendStatus(200);
+        return res.status(200).json({
+          Success: "Successfully verified account!",
+        });
+        //FIXME add test for this new response?
       }
     } catch (error) {
       // console.log("error from /verify route");
