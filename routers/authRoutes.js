@@ -1,4 +1,4 @@
-import { BadRequestError } from "../expressError.js";
+import { BadRequestError, InternalError } from "../expressError.js";
 import { authLoginSchema } from "../schemas/authSchemas.js";
 import {
   userRegisterSchema,
@@ -58,17 +58,16 @@ router.post(
       const newUser = await Auth.registerAccount({ ...req.body });
       const jsonResponse = await sendEmailRegistration(newUser);
 
-      return res.status(200).json(jsonResponse);
-
-      //FIXME Refactor this to ensure jsonResponse has returned a successful response, while allowing for mocking in tests.
-
-      // if (jsonResponse.accepted.length === 1) {
-      //   return res.status(200).json({
-      //     Success: "Successfully emailed registration link!", //FIXME add test for this new response?
-      //   });
-      // } else {
-      //   //FIXME review if I should add a custom error if message via nodemailer fails
-      // }
+      if (jsonResponse.accepted.length === 1) {
+        return res.status(200).json({
+          Success: "Successfully emailed registration link!",
+        });
+      } else {
+        //TODO Revisit in future - Should I test for this? Perhaps in an integration teset where I'm not mocking sendEmailRegistration fn.
+        throw new InternalError(
+          "We were unable to reach your e-mail provider. We've been alerted and will investigate. In the meantime, please try again."
+        );
+      }
     } catch (error) {
       // console.log("error from POST user/register");
       // console.log(error);
@@ -101,8 +100,7 @@ router.post(
         await Auth.verifyAccount(req.query.id);
         return res.status(200).json({
           Success: "Successfully verified account!",
-        });
-        //FIXME add test for this new response?
+        }); //TODO Revisit in future add test for this new response?
       }
     } catch (error) {
       // console.log("error from /verify route");

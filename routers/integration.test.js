@@ -26,7 +26,11 @@ afterAll(commonAfterAll);
 jest.mock("../utils/email.js");
 import sendEmailRegistration from "../utils/email.js";
 const fakeResp = {
-  Success: "Successfully emailed registration link!",
+  accepted: [
+    {
+      Success: "Successfully emailed registration link!",
+    },
+  ],
 };
 sendEmailRegistration.mockReturnValue(fakeResp);
 
@@ -56,7 +60,7 @@ describe("User Registration, Login, & Access to Tasks", () => {
       .send(newUser);
 
     expect(registerResponse.status).toBe(200);
-    expect(registerResponse.body).toEqual(fakeResp);
+    expect(registerResponse.body).toEqual(fakeResp.accepted[0]);
 
     /** Verify the user */
     const verifyResponse = await request(app).post(

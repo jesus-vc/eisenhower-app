@@ -18,7 +18,11 @@ import {
 jest.mock("../utils/email.js");
 import sendEmailRegistration from "../utils/email.js";
 const fakeResp = {
-  Success: "Successfully emailed registration link!",
+  accepted: [
+    {
+      Success: "Successfully emailed registration link!",
+    },
+  ],
 };
 
 /************************************** Hooks */
@@ -178,7 +182,7 @@ describe("POST /auth/register", function () {
       phone: "1213213213",
     });
     expect(resp.statusCode).toEqual(200);
-    expect(resp.body).toEqual(fakeResp);
+    expect(resp.body).toEqual(fakeResp.accepted[0]);
   });
 
   it("returns error if duplicate account", async function () {
