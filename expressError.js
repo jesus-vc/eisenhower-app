@@ -34,3 +34,11 @@ export class NotFoundError extends ExpressError {
     super(message, 404);
   }
 }
+
+/** 500 NOT FOUND error. */
+
+export class InternalError extends ExpressError {
+  constructor(message = "Internal Server Error") {
+    super(message, 500);
+  }
+}
