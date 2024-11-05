@@ -1,7 +1,7 @@
 import Joi from "joi";
 import { PHONE_NUMBER_REGEX } from "../constants.js";
 
-export const userRegisterSchema = Joi.object({
+export const schemaRegisterUser = Joi.object({
   firstName: Joi.string().min(1).max(30).required(),
   lastName: Joi.string().min(1).max(30).required(),
   email: Joi.string().email().min(8).max(60).required(),
@@ -13,7 +13,7 @@ export const userRegisterSchema = Joi.object({
   isAdmin: Joi.boolean(),
 });
 
-export const userVerifySchema = Joi.object({
+export const schemaVerifyUser = Joi.object({
   token: Joi.string()
     .length(26)
     .pattern(
@@ -26,8 +26,8 @@ export const userVerifySchema = Joi.object({
       "string.pattern.base":
         "Your registration link does not exist. Ensure the original link we e-mailed you has not been modified.",
     }),
-  id: Joi.number()
-    .positive()
-    .messages({ "number.unsafe": '"userId" supplied is too large' })
-    .required(),
+  id: Joi.string()
+    .uuid()
+    .required()
+    .messages({ "string.guid": '"userId" must be a valid UUID' }),
 });

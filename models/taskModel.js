@@ -1,30 +1,40 @@
-import pool from "../db/db.js";
-import { NotFoundError } from "../expressError.js";
+import { pool } from "../db/db.js";
+import { NotFoundError, BadRequestError } from "../expressError.js";
 import {
-  prioritizeTask,
   getUrgentAndImportant,
   removeTimezone,
   buildQueryCreateTask,
   buildQueryGetByFilters,
-  buildQueryUpdate,
-  handlePriorityUpdate,
+  buildQueryUpdateTask,
 } from "./helpers.js";
 
 export default class Task {
   /** Get all tasks given userId
    *
-   * Returns [{ taskId, title, urgent, important, priority, timebox, completed, note, category, deadlineDate }, ...]
+   * Returns [{ taskId, title, timebox, completed, note, category, deadlineDate }, ...]
    *
    * Does not throw error if no userId found, given the authentication middleware veries the existence of the userId **/
 
   static async getAll(userId) {
     const allTasks = await pool.query(
-      `SELECT id AS "taskId", title, urgent, important, priority, timebox, completed, note, category, deadline_date AS "deadlineDate"
-      FROM tasks
-      WHERE user_id=$1
+      `SELECT 
+        tasks.ui_task_id AS "taskId", 
+        categories.ui_category_id AS "categoryId", 
+        tasks.title, 
+        tasks.timebox, 
+        tasks.completed, 
+        tasks.note, 
+        tasks.deadline_date AS "deadlineDate"
+      FROM
+        tasks 
+      JOIN
+        categories ON tasks.fk_category_id = categories.id 
+      WHERE
+        tasks.fk_user_id = $1
       `,
       [userId]
     );
+
     const allTasksUpdated = removeTimezone(allTasks.rows);
     return allTasksUpdated;
   }
@@ -33,23 +43,40 @@ export default class Task {
    *
    * Required filters {userId}
    *
-   * Allowed filters { title, completed, priority, deadlineDate}
+   * Allowed filters { title, completed, deadlineDate}
    *
-   * Returns [{ taskId, title, urgent, important, priority, timebox, completed, note, category, deadlineDate }, ...]
+   * Returns [{ taskId, title, timebox, completed, note, category, deadlineDate }, ...]
    *
    * Does not throw error if no userId found, given the authentication middleware veries the existence of the userId **/
 
   static async getByFilters({ userId, ...taskFilters }) {
-    const jsToSql = { userId: "user_id", deadlineDate: "deadline_date" };
+    const jsToSql = {
+      userId: "tasks.fk_user_id",
+      deadlineDate: "tasks.deadline_date",
+      categoryId: "tasks.fk_category_id",
+    };
 
-    const selectClause =
-      'SELECT id AS "taskId", title, urgent, important, priority, timebox, completed, note, category, deadline_date AS "deadlineDate" FROM tasks';
+    const selectClause = `
+      SELECT
+        tasks.ui_task_id AS "taskId", 
+        tasks.title,
+        tasks.timebox, 
+        tasks.completed, 
+        tasks.note, 
+        categories.ui_category_id AS "categoryId", 
+        tasks.deadline_date AS "deadlineDate" 
+      FROM
+        tasks
+      JOIN
+        categories ON tasks.fk_category_id = categories.id 
+      `;
 
-    const { whereClause, whereValues } = buildQueryGetByFilters(
+    const { whereClause, whereValues } = buildQueryGetByFilters({
       taskFilters,
       userId,
-      jsToSql
-    );
+      jsToSql,
+    });
+
     const newTask = await pool.query(
       `${selectClause} ${whereClause}`,
       whereValues
@@ -60,71 +87,82 @@ export default class Task {
 
   /** Create a new task (from 'taskData') for a user
    *
-   * Required fields for 'taskData': { userId, title, urgent, important }
+   * Required fields for 'taskData': { userId, title }
    *
-   * Optional fields for 'taskData': { timebox, note, category, deadlineDate}
+   * Optional fields for 'taskData': { timebox, note, categoryId, deadlineDate}
    *
-   * Assigns value to 'priority' based on 'urgent' and 'important' values.
+   * categoryId defaults to 'Ideas' category.
    *
-   * Returns {taskId, userId, title, urgent, important, priority, timebox, completed, note, category, deadlineDate }
+   * Returns {taskId, userId, title, timebox, completed, note, categoryId, deadlineDate }
    *
    * Does not throw error if no userId found, given the authentication middleware veries the existence of the userId **/
 
   static async create(taskData) {
-    taskData.priority = prioritizeTask(taskData.urgent, taskData.important);
+    const jsToSql = {
+      userId: "fk_user_id",
+      deadlineDate: "deadline_date",
+      categoryId: "ui_category_id",
+    };
 
-    const jsToSql = { userId: "user_id", deadlineDate: "deadline_date" };
-    const returnStmt = `RETURNING id AS "taskId", user_id AS "userId", title, urgent, important, priority, timebox, completed, note, category, deadline_date AS "deadlineDate"`;
-
-    const { insertQuery, insertValues } = buildQueryCreateTask(
+    const { insertQuery, insertValues, returnStmt } = buildQueryCreateTask(
       taskData,
       jsToSql
     );
+
     const newTask = await pool.query(
       `${insertQuery} ${returnStmt}`,
       insertValues
     );
+
     const newTaskUpdated = removeTimezone(newTask.rows);
     return newTaskUpdated[0];
   }
 
   /** Update a task with 'data'.
    *
-   * This is a "partial update" where only provided 'data' fields will be changed.
-   * Updating 'urgent' or 'important' will modify 'priority'.
+   * This is a "partial update" where only provided 'data' fields will be changed.   *
+   * 'Data' can include: { title, timebox, completed, note, category, deadline_date }.
+   * 'Data' can NOT include: {fk_user_id}
    *
-   * 'Data' can include: { title, urgent, important, timebox, completed, note, category, deadline_date }.
-   * 'Data' can NOT include: {priority, user_id}
+   * Returns { taskId, fieldChanged1, fieldChanged2 ... }
    *
-   * Returns { taskId, userId, fieldChanged1, fieldChanged2 ... }
-   *
-   * Throws NotFoundError if taskId not found. **/
+   * Throws NotFoundError if taskId not found.
+   * Throws BadRequestError for any other database-level errors. **/
 
-  static async update({ taskId, ...newData }) {
-    const jsToSql = { taskId: "id", deadlineDate: "deadline_date" };
+  static async update({ taskId, userId, ...newData }) {
+    const jsToSql = {
+      taskId: "ui_task_id",
+      deadlineDate: "deadline_date",
+      categoryId: "ui_category_id",
+    };
     const updateClause = "UPDATE tasks";
-    const whereClause = `WHERE id=${taskId}`;
-    const sqlToJs = { deadline_date: 'deadline_date AS "deadlineDate"' };
+    const whereClause = `WHERE ui_task_id='${taskId}' AND fk_user_id='${userId}'`;
+    const sqlToJs = {
+      [jsToSql.deadlineDate]: `${jsToSql.deadlineDate} AS "deadlineDate"`,
+    };
 
-    const newPriority = await handlePriorityUpdate(taskId, newData);
-    if (newPriority) newData.priority = newPriority;
-
-    const { setClause, setValues, returnStmt } = buildQueryUpdate(
+    const { setClause, setValues, returnStmt } = buildQueryUpdateTask({
       newData,
+      userId,
       jsToSql,
-      sqlToJs
-    );
-    const updatedTask = await pool.query(
-      `${updateClause} ${setClause} ${whereClause} ${returnStmt}`,
-      setValues
-    );
+      sqlToJs,
+    });
 
-    if (!updatedTask.rows[0]) {
-      throw new NotFoundError(`Invalid taskId.`);
+    try {
+      const updatedTask = await pool.query(
+        `${updateClause} ${setClause} ${whereClause} ${returnStmt}`,
+        setValues
+      );
+
+      if (!updatedTask.rows[0]) {
+        throw new NotFoundError(`Invalid taskId.`);
+      }
+
+      const updatedTaskModified = removeTimezone(updatedTask.rows);
+      return updatedTaskModified[0];
+    } catch (error) {
+      throw new BadRequestError(error.message);
     }
-
-    const updatedTaskModified = removeTimezone(updatedTask.rows);
-    return updatedTaskModified[0];
   }
 
   /** Update a task's 'urgent' and 'important' values based on 'priority' provided
@@ -142,7 +180,7 @@ export default class Task {
     const updateClause = "UPDATE tasks";
     const whereClause = `WHERE id=${taskId}`;
 
-    const { setClause, setValues, returnStmt } = buildQueryUpdate(
+    const { setClause, setValues, returnStmt } = buildQueryUpdateTask(
       newData,
       jsToSql,
       sqlToJs
@@ -167,11 +205,11 @@ export default class Task {
    * Throws NotFoundError if taskId not found. **/
 
   static async delete(taskId) {
-    let result = await pool.query(
+    const result = await pool.query(
       `DELETE
            FROM tasks
-           WHERE id = $1
-           RETURNING id`,
+           WHERE ui_task_id = $1
+           RETURNING ui_task_id`,
       [taskId]
     );
 

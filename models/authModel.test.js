@@ -1,4 +1,4 @@
-import pool from "../db/db.js";
+import { pool } from "../db/db.js";
 import Auth from "./authModel";
 import {
   commonBeforeAll,
@@ -34,7 +34,9 @@ describe("registerAccount", function () {
 
     expect(addedUser).toEqual({
       ...newUser,
-      id: expect.any(Number),
+      id: expect.stringMatching(
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
+      ),
       plainTextToken: expect.stringMatching(/^.{26}$/),
     });
 

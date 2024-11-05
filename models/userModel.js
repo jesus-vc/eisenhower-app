@@ -1,4 +1,4 @@
-import pool from "../db/db.js";
+import { pool } from "../db/db.js";
 import Auth from "../models/authModel.js";
 import bcrypt from "bcrypt";
 import { BadRequestError } from "../expressError.js";

@@ -2,7 +2,7 @@ import { jest } from "@jest/globals";
 import request from "supertest";
 import app from "../app";
 import jwt from "jsonwebtoken";
-import pool from "../db/db.js";
+import { pool } from "../db/db.js";
 
 import {
   commonBeforeAll,
@@ -12,11 +12,20 @@ import {
   adminToken,
 } from "./_testCommon";
 
+let client;
+
 /************************************** Hooks */
 
 beforeAll(commonBeforeAll);
-beforeEach(commonBeforeEach);
-afterEach(commonAfterEach);
+// beforeEach(commonBeforeEach);
+// afterEach(commonAfterEach);
+beforeEach(async () => {
+  client = await commonBeforeEach();
+});
+
+afterEach(async () => {
+  await commonAfterEach(client);
+});
 afterAll(commonAfterAll);
 
 /************************************** Mocks */
@@ -34,6 +43,7 @@ const fakeResp = {
 };
 sendEmailRegistration.mockReturnValue(fakeResp);
 
+//FIXME-LATER add integration test for newest logic
 /************************************** User Registration, Login, & Access to Tasks  */
 
 describe("User Registration, Login, & Access to Tasks", () => {
@@ -73,6 +83,7 @@ describe("User Registration, Login, & Access to Tasks", () => {
       email: newUser.email,
       password: newUser.password,
     });
+
     const token = respLogin.body.token;
 
     expect(respLogin.statusCode).toEqual(200);

@@ -1,12 +1,12 @@
-import pool from "../db/db.js";
+import { pool } from "../db/db.js";
 import { BCRYPT_WORK_FACTOR } from "../config.js";
 import bcrypt from "bcrypt";
 
 async function commonBeforeAll() {
   /** Must delete data in 'tasks' before users due to foreign key constraint  */
-
   await pool.query("DELETE FROM tasks");
   await pool.query("DELETE FROM tokens_registration");
+  await pool.query("DELETE FROM categories");
   await pool.query("DELETE FROM users");
 
   const newUsers = await pool.query(
@@ -28,12 +28,30 @@ async function commonBeforeAll() {
     ]
   );
 
+  const newCategories = await pool.query(
+    `INSERT INTO categories(
+                          fk_user_id, 
+                          name)
+    VALUES ($1, 'Finances'),
+            ($2, 'Health'),
+            ($3, 'Family')
+    RETURNING id`,
+    [newUsers.rows[0].id, newUsers.rows[1].id, newUsers.rows[2].id]
+  );
+
   await pool.query(
-    `INSERT INTO tasks(user_id, title, urgent, important, priority, timebox, completed, note, category, deadline_date)
-        VALUES ($1, 'Task 1', true, true, 'now', '30', false, 'Note 1', 'Finances', '1111-1-1'),
-               ($2, 'Task 2', true, false, 'delegate', '60', false, 'Note 2', 'Health','2222-2-2'),
-               ($3, 'Task 3', false, false, 'avoid', '90', true, 'Note 3', 'Family', '3333-3-3')`,
-    [newUsers.rows[0].id, newUsers.rows[1].id, newUsers.rows[1].id]
+    `INSERT INTO tasks(fk_user_id, fk_category_id, title, timebox, completed, note, deadline_date)
+        VALUES ($1, $2, 'Task 1', '30', false, 'Note 1', '1111-1-1'),
+               ($3, $4, 'Task 2', '60', false, 'Note 2','2222-2-2'),
+               ($5, $6, 'Task 3', '90', true, 'Note 3', '3333-3-3')`,
+    [
+      newUsers.rows[0].id,
+      newCategories.rows[0].id,
+      newUsers.rows[1].id,
+      newCategories.rows[1].id,
+      newUsers.rows[1].id,
+      newCategories.rows[2].id,
+    ]
   );
 }
 
@@ -48,6 +66,7 @@ async function commonAfterEach() {
 async function commonAfterAll() {
   await pool.query("DELETE FROM tasks");
   await pool.query("DELETE FROM tokens_registration");
+  await pool.query("DELETE FROM categories");
   await pool.query("DELETE FROM users");
   await pool.end();
 }

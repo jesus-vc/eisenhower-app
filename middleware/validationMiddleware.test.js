@@ -1,13 +1,13 @@
 import { validateSchemas } from "./validationMiddleware";
 import {
-  taskCreateSchema,
-  taskSchemaUpdatePriority,
-  taskSchemaUpdatePath,
+  schemaCreateTask,
+  schemaUpdateTaskPriority,
+  schemaUpdateTaskPath,
 } from "../schemas/taskSchemas";
 import { BadRequestError } from "../expressError";
 
-import { userRegisterSchema, userVerifySchema } from "../schemas/userSchemas";
-import { authLoginSchema } from "../schemas/authSchemas";
+import { schemaRegisterUser, schemaVerifyUser } from "../schemas/userSchemas";
+import { schemaAuthLogin } from "../schemas/authSchemas";
 
 /************************************** validateSchemas */
 
@@ -28,7 +28,7 @@ describe("validateSchemas", function () {
 
     const validations = [
       {
-        schema: taskCreateSchema,
+        schema: schemaCreateTask,
         userIdParam: true,
         reqBody: true,
       },
@@ -55,8 +55,8 @@ describe("validateSchemas", function () {
     const next = jest.fn();
 
     const validations = [
-      { schema: taskSchemaUpdatePriority, reqBody: true },
-      { schema: taskSchemaUpdatePath, userIdParam: true, taskIdParam: true },
+      { schema: schemaUpdateTaskPriority, reqBody: true },
+      { schema: schemaUpdateTaskPath, userIdParam: true, taskIdParam: true },
     ];
 
     const middleware = validateSchemas(validations);
@@ -83,8 +83,8 @@ describe("validateSchemas", function () {
     };
 
     const validations = [
-      { schema: taskSchemaUpdatePriority, reqBody: true },
-      { schema: taskSchemaUpdatePath, userIdParam: true, taskIdParam: true },
+      { schema: schemaUpdateTaskPriority, reqBody: true },
+      { schema: schemaUpdateTaskPath, userIdParam: true, taskIdParam: true },
     ];
 
     const middleware = validateSchemas(validations);
@@ -113,8 +113,8 @@ describe("validateSchemas", function () {
     };
 
     const validations = [
-      { schema: userRegisterSchema, reqBody: true },
-      { schema: taskSchemaUpdatePath, userIdParam: true, taskIdParam: true },
+      { schema: schemaRegisterUser, reqBody: true },
+      { schema: schemaUpdateTaskPath, userIdParam: true, taskIdParam: true },
     ];
 
     const middleware = validateSchemas(validations);

@@ -1,8 +1,9 @@
-import { jest } from "@jest/globals";
+import { beforeAll, jest } from "@jest/globals";
 import request from "supertest";
 import app from "../app";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
+import { v4 as uuidv4 } from "uuid";
 import { REGISTRATION_TTL } from "../config.js";
 import {
   commonBeforeAll,
@@ -12,9 +13,9 @@ import {
 } from "./_testCommon";
 
 /************************************** Mocks */
-/** Mock sendEmailRegistration fn to avoid sending external emails
- * and to capture arguments sent to the fn.
- * This fn is invoked on the backend for every request to /auth/register*/
+/** Mock sendEmailRegistration fn to avoid sending external emails and to capture arguments sent to the fn.
+ * sendEmailRegistration is invoked when sending requests to /auth/register */
+
 jest.mock("../utils/email.js");
 import sendEmailRegistration from "../utils/email.js";
 const fakeResp = {
@@ -25,27 +26,14 @@ const fakeResp = {
   ],
 };
 
-/************************************** Hooks */
-
-beforeAll(commonBeforeAll);
-beforeEach(commonBeforeEach);
-afterEach(commonAfterEach);
-afterAll(commonAfterAll);
-
 /************************************** Reusable functions and variables */
 
-const newUser = {
-  firstName: "user",
-  lastName: "lastname",
-  phone: "1213213213",
-  email: "test@test.com",
-  password: "mypassword",
-};
+let client;
 
-const registerUser = async ({ verifyUser = false } = {}) => {
+const registerUser = async ({ newUser, verifyUser = false } = {}) => {
   /** Capture args sent to sendEmailRegistration */
   let plainTextToken, userId;
-  sendEmailRegistration.mockImplementation((args) => {
+  sendEmailRegistration.mockImplementationOnce((args) => {
     plainTextToken = args.plainTextToken;
     userId = args.id;
     return fakeResp;
@@ -53,26 +41,61 @@ const registerUser = async ({ verifyUser = false } = {}) => {
 
   const respRegister = await request(app).post("/auth/register").send(newUser);
   expect(respRegister.statusCode).toEqual(200);
-
   if (verifyUser) {
     const respVerify = await request(app).post(
       `/auth/verify?token=${plainTextToken}&id=${userId}`
     );
     expect(respVerify.statusCode).toEqual(200);
   }
+
+  sendEmailRegistration.mockReset();
   return { plainTextToken, userId };
 };
+
+function getFakeUserId() {
+  return uuidv4();
+}
+
+/************************************** Hooks */
+
+beforeAll(commonBeforeAll);
+beforeEach(async () => {
+  client = await commonBeforeEach();
+});
+
+afterEach(async () => {
+  await commonAfterEach(client);
+});
+
+afterAll(commonAfterAll);
 
 /************************************** POST /auth/login */
 
 describe("POST /auth/login", function () {
-  it("returns auth token with valid email and password", async function () {
-    await registerUser({ verifyUser: true });
+  let storedPlainTextToken, storedUserId;
+  const newUser = {
+    firstName: "user",
+    lastName: "lastname",
+    phone: "1213213213",
+    email: "test@test.com",
+    password: "mypassword",
+  };
 
+  beforeAll(async () => {
+    const { plainTextToken, userId } = await registerUser({
+      newUser,
+      verifyUser: true,
+    });
+    storedPlainTextToken = plainTextToken;
+    storedUserId = userId;
+  });
+
+  it("returns auth token with valid email and password", async function () {
     const respLogin = await request(app).post("/auth/login").send({
       email: newUser.email,
       password: newUser.password,
     });
+
     const token = respLogin.body.token;
 
     expect(respLogin.statusCode).toEqual(200);
@@ -85,8 +108,6 @@ describe("POST /auth/login", function () {
   });
 
   it("returns error with invalid password", async function () {
-    await registerUser({ verifyUser: true });
-
     const invalidPw = newUser.password + "1";
     const respLogin = await request(app).post("/auth/login").send({
       email: newUser.email,
@@ -98,8 +119,6 @@ describe("POST /auth/login", function () {
   });
 
   it("returns error with invalid email", async function () {
-    await registerUser({ verifyUser: true });
-
     const invalidEmail = "test2@test.com";
     const respLogin = await request(app).post("/auth/login").send({
       email: invalidEmail,
@@ -124,8 +143,6 @@ describe("POST /auth/login", function () {
   });
 
   it("returns schema errors for email and password threshold violations", async function () {
-    await registerUser();
-
     const longString = crypto.randomBytes(31).toString("hex"); //string lenth = 62
     const longEmail = `${longString}@test.com`;
     const resp1 = await request(app).post("/auth/login").send({
@@ -173,6 +190,16 @@ describe("POST /auth/login", function () {
 /************************************** POST /auth/register */
 
 describe("POST /auth/register", function () {
+  beforeAll(() => {
+    sendEmailRegistration.mockImplementation((args) => {
+      return fakeResp;
+    });
+  });
+
+  afterAll(() => {
+    sendEmailRegistration.mockReset();
+  });
+
   it("works with valid data for anon", async function () {
     const resp = await request(app).post("/auth/register").send({
       firstName: "Lawrence",
@@ -389,22 +416,37 @@ describe("POST /auth/register", function () {
 /************************************** POST /auth/verify */
 
 describe("POST /auth/verify", function () {
+  let storedPlainTextToken, storedUserId;
+  const newUser = {
+    firstName: "user2",
+    lastName: "lastname2",
+    phone: "1213213213",
+    email: "test2@test2.com",
+    password: "mypassword2",
+  };
+
+  beforeEach(async () => {
+    const { plainTextToken, userId } = await registerUser({
+      newUser,
+      verifyUser: false,
+    });
+    storedPlainTextToken = plainTextToken;
+    storedUserId = userId;
+  });
+
   it("works if valid token", async function () {
-    const { plainTextToken, userId } = await registerUser();
-
     const respValidToken = await request(app).post(
-      `/auth/verify?token=${plainTextToken}&id=${userId}`
+      `/auth/verify?token=${storedPlainTextToken}&id=${storedUserId}`
     );
-
     expect(respValidToken.statusCode).toEqual(200);
   });
 
   it("returns error if token has invalid length", async function () {
     const invalidToken = "fakeToken";
-    const invalidId = "f";
+    const invalidUserId = getFakeUserId();
 
     const resp = await request(app).post(
-      `/auth/verify?token=${invalidToken}&id=${invalidId}`
+      `/auth/verify?token=${invalidToken}&id=${invalidUserId}`
     );
     expect(resp.statusCode).toEqual(400);
     expect(resp.body.error.message).toEqual(
@@ -413,16 +455,16 @@ describe("POST /auth/verify", function () {
   });
 
   it("returns error and emails new token for expired token", async function () {
-    const { plainTextToken, userId } = await registerUser();
-
     const expiredTime = new Date(
-      Date.now() + (REGISTRATION_TTL + 1) * 60 * 1000
+      Date.now() + (REGISTRATION_TTL + 10) * 60 * 1000
     );
 
-    jest.spyOn(Date, "now").mockReturnValueOnce(expiredTime);
+    const mockDateNow = jest
+      .spyOn(Date, "now")
+      .mockImplementation(() => expiredTime);
 
     const respInvalidToken = await request(app).post(
-      `/auth/verify?token=${plainTextToken}&id=${userId}`
+      `/auth/verify?token=${storedPlainTextToken}&id=${storedUserId}`
     );
 
     expect(respInvalidToken.statusCode).toEqual(400);
@@ -431,24 +473,17 @@ describe("POST /auth/verify", function () {
       "Your registration link is expired. We've emailed you a new registration token."
     );
 
-    /** New token sent should be different from original token */
-    const tokensEmailed = sendEmailRegistration.mock.calls.filter(
-      (arr) => arr[0].id === userId
-    );
-    expect(tokensEmailed[0][0].plainTextToken).not.toEqual(
-      tokensEmailed[1][0].plainTextToken
+    expect(sendEmailRegistration.mock.calls[0][0].plainTextToken).not.toEqual(
+      storedPlainTextToken
     );
 
-    jest.spyOn(Date, "now").mockRestore();
+    mockDateNow.mockRestore();
   });
 
   it("returns error if token does not exist for user id", async function () {
-    const { plainTextToken, userId } = await registerUser();
-
-    const invalidUserId = userId + 1;
-
+    const invalidUserId = getFakeUserId();
     const respInvalidToken = await request(app).post(
-      `/auth/verify?token=${plainTextToken}&id=${invalidUserId}`
+      `/auth/verify?token=${storedPlainTextToken}&id=${invalidUserId}`
     );
 
     expect(respInvalidToken.statusCode).toEqual(400);
@@ -459,13 +494,11 @@ describe("POST /auth/verify", function () {
   });
 
   it("returns error if token does not match hashed token in storage", async function () {
-    const { plainTextToken, userId } = await registerUser();
-
     /** Invalidate original token by inversing it. */
-    const invalidToken = plainTextToken.split("").reverse().join("");
+    const invalidToken = storedPlainTextToken.split("").reverse().join("");
 
     const respInvalidToken = await request(app).post(
-      `/auth/verify?token=${invalidToken}&id=${userId}`
+      `/auth/verify?token=${invalidToken}&id=${storedUserId}`
     );
 
     expect(respInvalidToken.statusCode).toEqual(400);
@@ -475,12 +508,13 @@ describe("POST /auth/verify", function () {
     );
   });
 
-  it("fails: 'userId' input too large", async function () {
-    const { plainTextToken } = await registerUser();
+  it("fails: 'userId' input is invalid", async function () {
     const resp = await request(app).post(
-      `/auth/verify?token=${plainTextToken}&id=90071992547409924`
+      `/auth/verify?token=${storedPlainTextToken}&id=${getFakeUserId()}`
     );
     expect(resp.status).toBe(400);
-    expect(resp.body.error.message).toBe('"userId" supplied is too large');
+    expect(resp.body.error.message).toBe(
+      `Your registration link does not exist. Ensure the original link we e-mailed you has not been modified.`
+    );
   });
 });

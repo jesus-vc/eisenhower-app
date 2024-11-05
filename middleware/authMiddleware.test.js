@@ -1,8 +1,9 @@
 import jwt from "jsonwebtoken";
-import pool from "../db/db.js";
-
+import { pool } from "../db/db.js";
 import { UnauthorizedError, NotFoundError } from "../expressError";
 import Auth from "../models/authModel";
+import { getFakeUserId } from "../utils/testHelpers.js";
+
 import {
   authenticateJWT,
   ensureLoggedIn,
@@ -113,7 +114,8 @@ describe("userExistsAndCorrect", function () {
 
   it("throws NotFoundError to admin if userId doesn't exist", async function () {
     /** value of userId does not matter since admin status overrides this value in userExistsAndCorrect() fn. */
-    const req = { params: { userId: 1111 } };
+
+    const req = { params: { userId: getFakeUserId() } };
     const res = {
       locals: { user: { email: "admin@email.com", isAdmin: true } },
     };
