@@ -91,6 +91,9 @@ describe("User Registration, Login, & Access to Tasks", () => {
       email: newUser.email,
       exp: expect.any(Number),
       iat: expect.any(Number),
+      firstName: "U8F",
+      lastName: "U8L",
+      id: userId,
       isAdmin: false,
     });
 

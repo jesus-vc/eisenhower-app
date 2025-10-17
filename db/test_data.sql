@@ -7,9 +7,6 @@ WHERE EXISTS (SELECT 1 FROM categories);
 DELETE FROM users
 WHERE EXISTS (SELECT 1 FROM users);
 
--- 2a7bcaeb-e2ab-4431-a694-da2905eb8de5
--- 0c8950f7-041d-4012-a06e-f1fc4a57cd23
-
 INSERT INTO users (id, first_name, last_name, phone, email, hashed_password, verified, is_admin) VALUES
 ('2a7bcaeb-e2ab-4431-a694-da2905eb8de5', 'John', 'Doe', '1234567890', 'john.doe@example.com', 'hashed_password_1', TRUE, TRUE),
 ('0c8950f7-041d-4012-a06e-f1fc4a57cd23', 'Jane', 'Smith', '0987654321', 'jane.smith@example.com', 'hashed_password_2', True, TRUE);

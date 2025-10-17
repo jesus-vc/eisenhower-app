@@ -11,6 +11,7 @@ import {
   commonAfterEach,
   commonAfterAll,
 } from "./_testCommon";
+import { getFakeUserId } from "../utils/testHelpers.js";
 
 /************************************** Mocks */
 /** Mock sendEmailRegistration fn to avoid sending external emails and to capture arguments sent to the fn.
@@ -51,10 +52,6 @@ const registerUser = async ({ newUser, verifyUser = false } = {}) => {
   sendEmailRegistration.mockReset();
   return { plainTextToken, userId };
 };
-
-function getFakeUserId() {
-  return uuidv4();
-}
 
 /************************************** Hooks */
 
@@ -103,6 +100,9 @@ describe("POST /auth/login", function () {
       email: newUser.email,
       exp: expect.any(Number),
       iat: expect.any(Number),
+      firstName: newUser.firstName,
+      lastName: newUser.lastName,
+      id: storedUserId,
       isAdmin: false,
     });
   });
@@ -115,7 +115,7 @@ describe("POST /auth/login", function () {
     });
     expect(respLogin.statusCode).toEqual(400);
 
-    expect(respLogin.body.error.message).toEqual("Invalid user/password.");
+    expect(respLogin.body.error.message).toEqual("Invalid credentials.");
   });
 
   it("returns error with invalid email", async function () {
@@ -126,7 +126,7 @@ describe("POST /auth/login", function () {
     });
     expect(respLogin.statusCode).toEqual(400);
 
-    expect(respLogin.body.error.message).toEqual("Invalid user/password.");
+    expect(respLogin.body.error.message).toEqual("Invalid credentials.");
   });
 
   it("returns schema error with malformed email", async function () {

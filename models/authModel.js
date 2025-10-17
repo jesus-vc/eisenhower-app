@@ -70,18 +70,18 @@ export default class Auth {
    * Validate user's 'verified' status.
    * Validate user's e-mail and password.
    *
-   * Returns boolean. */
+   * Returns boolean and user fields. */
 
   static async authenticate(email, password) {
     const result = await pool.query(
-      `SELECT hashed_password, verified
+      `SELECT id, first_name, last_name, hashed_password, verified, is_admin
       FROM users
       WHERE email = $1`,
       [email]
     );
 
     if (!result.rows[0]) {
-      throw new BadRequestError(`Invalid user/password.`);
+      throw new BadRequestError(`Invalid credentials.`);
     }
 
     if (result.rows[0].verified === false) {
@@ -90,7 +90,19 @@ export default class Auth {
       );
     }
 
-    return await bcrypt.compare(password, result.rows[0].hashed_password);
+    const validLogin = await bcrypt.compare(password, result.rows[0].hashed_password)
+
+    if (validLogin) {
+      return {
+        id: result.rows[0].id,
+        firstName: result.rows[0].first_name,
+        lastName: result.rows[0].last_name,
+        email,
+        isAdmin: result.rows[0].is_admin,
+      };
+    }
+
+    return false; 
   }
 
   /** Generate and stores a JWT token.
@@ -99,8 +111,11 @@ export default class Auth {
 
   static async createAuthToken(userData) {
     let payload = {
+      id: userData.id, 
+      firstName: userData.firstName,
+      lastName: userData.lastName, 
       email: userData.email,
-      isAdmin: userData.isAdmin || false,
+      isAdmin: userData.isAdmin,
     };
     return jwt.sign(payload, SECRET_KEY, JWT_OPTIONS);
   }

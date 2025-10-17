@@ -3,6 +3,7 @@ import app from "../app";
 import crypto from "crypto";
 import { pool } from "../db/db.js";
 import { v4 as uuidv4 } from "uuid";
+import { getFakeUserId, getFakeCategoryId, getFakeTaskId } from "../utils/testHelpers.js";
 
 import {
   commonBeforeAll,
@@ -32,18 +33,6 @@ let user1, user2, user3;
 let customCategory1, customCategory2, customCategory3;
 let defaultCategory1, defaultCategory2, defaultCategory3;
 let uiTaskId1, uiTaskId2, uiTaskId3;
-
-function getFakeUserId() {
-  return uuidv4();
-}
-
-function getFakeCategoryId() {
-  return `CA-${uuidv4()}`;
-}
-
-function getFakeTaskId() {
-  return `TA-${uuidv4()}`;
-}
 
 async function fetchGlobalData() {
   const userIds = await pool.query(

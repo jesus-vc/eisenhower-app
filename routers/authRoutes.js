@@ -23,16 +23,12 @@ router.post(
   async function (req, res, next) {
     try {
       const { email, password } = req.body;
-      const validLogin = await Auth.authenticate(
-        req.body.email,
-        req.body.password
-      );
-
-      if (validLogin) {
-        const token = await Auth.createAuthToken({ email });
+      const userData = await Auth.authenticate(email, password);
+      if (userData) {
+        const token = await Auth.createAuthToken({ email, id: userData.id, firstName: userData.firstName, lastName: userData.lastName, isAdmin: userData.isAdmin });
         res.json({ token });
       } else {
-        throw new BadRequestError("Invalid user/password.");
+        throw new BadRequestError("Invalid credentials.");
       }
     } catch (error) {
       // console.log("error from /login router");
