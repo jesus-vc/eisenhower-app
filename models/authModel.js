@@ -1,4 +1,4 @@
-import pool from "../db/db.js";
+import { pool } from "../db/db.js";
 import bcrypt from "bcrypt";
 import { BadRequestError } from "../expressError.js";
 import {
@@ -13,7 +13,6 @@ import { SECRET_KEY } from "../config.js";
 import sendEmailRegistration from "../utils/email.js";
 
 /** Related functions for user authentication and authorization */
-
 export default class Auth {
   /** Register a new account for user.
    *
@@ -71,18 +70,18 @@ export default class Auth {
    * Validate user's 'verified' status.
    * Validate user's e-mail and password.
    *
-   * Returns boolean. */
+   * Returns boolean and user fields. */
 
   static async authenticate(email, password) {
     const result = await pool.query(
-      `SELECT hashed_password, verified
+      `SELECT id, first_name, last_name, hashed_password, verified, is_admin
       FROM users
       WHERE email = $1`,
       [email]
     );
 
     if (!result.rows[0]) {
-      throw new BadRequestError(`Invalid user/password.`);
+      throw new BadRequestError(`Invalid credentials.`);
     }
 
     if (result.rows[0].verified === false) {
@@ -91,7 +90,19 @@ export default class Auth {
       );
     }
 
-    return await bcrypt.compare(password, result.rows[0].hashed_password);
+    const validLogin = await bcrypt.compare(password, result.rows[0].hashed_password)
+
+    if (validLogin) {
+      return {
+        id: result.rows[0].id,
+        firstName: result.rows[0].first_name,
+        lastName: result.rows[0].last_name,
+        email,
+        isAdmin: result.rows[0].is_admin,
+      };
+    }
+
+    return false; 
   }
 
   /** Generate and stores a JWT token.
@@ -100,10 +111,12 @@ export default class Auth {
 
   static async createAuthToken(userData) {
     let payload = {
+      id: userData.id, 
+      firstName: userData.firstName,
+      lastName: userData.lastName, 
       email: userData.email,
-      isAdmin: userData.isAdmin || false,
+      isAdmin: userData.isAdmin,
     };
-
     return jwt.sign(payload, SECRET_KEY, JWT_OPTIONS);
   }
 
@@ -137,7 +150,7 @@ export default class Auth {
     return plainTextToken;
   }
 
-  /** Validates a registration token.
+  /** Validates a registration token.roundtree229
    *
    * Returns a boolean (true/false). **/
 
@@ -153,7 +166,6 @@ export default class Auth {
         `Your registration link does not exist. Ensure the original link we e-mailed you has not been modified.`
       );
     }
-
     const isValid = await bcrypt.compare(token, result.rows[0].hashed_token);
 
     if (!isValid) {
@@ -162,14 +174,17 @@ export default class Auth {
       );
     }
 
-    if (Date.now() > result.rows[0].expiration_timestamp) {
+    const expirationTimestamp = new Date(
+      result.rows[0].expiration_timestamp
+    ).getTime();
+
+    if (Date.now() > expirationTimestamp) {
       /** Delete expired token */
       await pool.query(
         `DELETE FROM tokens_registration
         WHERE fk_user_id = $1`,
         [userId]
       );
-
       /** Generate and store new registration token  */
       const newToken = await Auth.createRegistrationToken(userId);
 
@@ -181,12 +196,12 @@ export default class Auth {
       );
 
       await sendEmailRegistration({
-        id: Number(userId),
+        id: userId,
         email: userEmail.rows[0].email,
         plainTextToken: newToken,
       });
 
-      //TODO Revisit in future:  Replace logic below once I create a React button that user has to click to send new token.
+      //NICE-TO-HAVE Revisit in future:  Replace logic below once I create a React button that user has to click to send new token.
       throw new BadRequestError(
         `Your registration link is expired. We've emailed you a new registration token.`
       );

@@ -14,7 +14,7 @@ export class ExpressError extends Error {
 /** 400 BAD REQUEST error. */
 
 export class BadRequestError extends ExpressError {
-  constructor(message = "Bad Request") {
+  constructor(message = "Bad Request!") {
     super(message, 400);
   }
 }

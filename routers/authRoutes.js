@@ -1,8 +1,8 @@
 import { BadRequestError, InternalError } from "../expressError.js";
-import { authLoginSchema } from "../schemas/authSchemas.js";
+import { schemaAuthLogin } from "../schemas/authSchemas.js";
 import {
-  userRegisterSchema,
-  userVerifySchema,
+  schemaRegisterUser,
+  schemaVerifyUser,
 } from "../schemas/userSchemas.js";
 import { validateSchemas } from "../middleware/validationMiddleware.js";
 import sendEmailRegistration from "../utils/email.js";
@@ -19,20 +19,16 @@ const router = new express.Router();
 
 router.post(
   "/login",
-  validateSchemas([{ schema: authLoginSchema, reqBody: true }]),
+  validateSchemas([{ schema: schemaAuthLogin, reqBody: true }]),
   async function (req, res, next) {
     try {
       const { email, password } = req.body;
-      const validLogin = await Auth.authenticate(
-        req.body.email,
-        req.body.password
-      );
-
-      if (validLogin) {
-        const token = await Auth.createAuthToken({ email });
+      const userData = await Auth.authenticate(email, password);
+      if (userData) {
+        const token = await Auth.createAuthToken({ email, id: userData.id, firstName: userData.firstName, lastName: userData.lastName, isAdmin: userData.isAdmin });
         res.json({ token });
       } else {
-        throw new BadRequestError("Invalid user/password.");
+        throw new BadRequestError("Invalid credentials.");
       }
     } catch (error) {
       // console.log("error from /login router");
@@ -52,18 +48,16 @@ router.post(
 
 router.post(
   "/register",
-  validateSchemas([{ schema: userRegisterSchema, reqBody: true }]),
+  validateSchemas([{ schema: schemaRegisterUser, reqBody: true }]),
   async function (req, res, next) {
     try {
       const newUser = await Auth.registerAccount({ ...req.body });
       const jsonResponse = await sendEmailRegistration(newUser);
-
       if (jsonResponse.accepted.length === 1) {
         return res.status(200).json({
           Success: "Successfully emailed registration link!",
         });
       } else {
-        //TODO Revisit in future - Should I test for this? Perhaps in an integration teset where I'm not mocking sendEmailRegistration fn.
         throw new InternalError(
           "We were unable to reach your e-mail provider. We've been alerted and will investigate. In the meantime, please try again."
         );
@@ -93,14 +87,14 @@ router.post(
 
 router.post(
   "/verify",
-  validateSchemas([{ schema: userVerifySchema, reqQuery: true }]),
+  validateSchemas([{ schema: schemaVerifyUser, reqQuery: true }]),
   async function (req, res, next) {
     try {
       if (await Auth.validToken(req.query)) {
         await Auth.verifyAccount(req.query.id);
         return res.status(200).json({
           Success: "Successfully verified account!",
-        }); //TODO Revisit in future add test for this new response?
+        });
       }
     } catch (error) {
       // console.log("error from /verify route");

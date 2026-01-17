@@ -8,8 +8,8 @@ import { BadRequestError } from "../expressError.js";
  *
  * @example
  * validateSchemas([
- *   { schema: taskUpdateBodySchema, reqBody: true },
- *   { schema: taskSchemaUpdatePath, userIdParam: true, taskIdParam: true }
+ *   { schema: schemaUpdateTaskBody, reqBody: true },
+ *   { schema: schemaUpdateTaskPath, userIdParam: true, taskIdParam: true }
  * ]);
  */
 
@@ -22,6 +22,8 @@ export const validateSchemas = (validations) => {
           requestData.push({ userId: req.params.userId });
         if (validation.taskIdParam)
           requestData.push({ taskId: req.params.taskId });
+        if (validation.categoryIdParam)
+          requestData.push({ categoryId: req.params.categoryId });
         if (validation.reqQuery) requestData.push({ ...req.query });
         if (validation.reqBody) requestData.push({ ...req.body });
 
@@ -32,6 +34,8 @@ export const validateSchemas = (validations) => {
       });
       return next();
     } catch (error) {
+      // console.log("error from validateSchemas");
+      // console.log(error);
       return next(error);
     }
   };
